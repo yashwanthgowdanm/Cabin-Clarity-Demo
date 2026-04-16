@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cabin Clarity | Wi-Fi Portal</title>
+    
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Scoped Wi-Fi Portal Styles for inside the mobile screen */
+        .portal-bg {
+            background: #0f172a;
+            background-image: radial-gradient(circle at top right, #1e293b, #0f172a);
+            color: white;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .portal-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            padding: 1.5rem;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            width: 100%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .portal-bg h1 { margin-top: 0; font-size: 1.8rem; letter-spacing: -0.025em; margin-bottom: 0.5rem; color: white;}
+        .portal-bg p { color: #94a3b8; line-height: 1.5; margin-bottom: 1.5rem; font-size: 0.9rem; }
+        
+        .btn-portal {
+            background: #2563eb; color: white; border: none; padding: 1rem;
+            font-size: 1.05rem; font-weight: 700; border-radius: 12px;
+            cursor: pointer; width: 100%; transition: all 0.2s;
+            box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.39);
+        }
+        .btn-portal:hover { background: #1d4ed8; transform: translateY(-2px); }
+        .btn-portal:disabled { background: #475569; cursor: wait; transform: none; box-shadow: none; }
+        
+        .form-group { text-align: left; margin-bottom: 1.2rem; }
+        .form-group label { display: block; margin-bottom: 0.4rem; font-weight: 600; color: #cbd5e1; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        
+        .portal-bg select {
+            width: 100%; padding: 0.8rem; border-radius: 12px; border: 1px solid #475569;
+            background: #1e293b; color: white; font-size: 1rem; outline: none;
+            font-family: 'Inter', sans-serif;
+            appearance: none;
+        }
+
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; background: #1e293b; padding: 1rem; border-radius: 12px; border: 1px solid #475569; }
+        
+        /* Step animations */
+        .step { display: none; }
+        .step.active { display: block; animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        .icon-circle {
+            width: 70px; height: 70px; background: rgba(37, 99, 235, 0.2);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 2.2rem; margin: 0 auto 1.2rem auto; border: 2px solid #2563eb;
+        }
+
+        /* Adjust body to center the device frame */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #e5e7eb; /* Neutral background behind phone */
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="device-frame">
+        <div class="device-screen" style="background: #0f172a; border-radius: 40px; overflow: hidden;">
+            
+            <div class="ios-status-bar" style="color: white; z-index: 10;">
+                <div id="ios-clock">9:41</div>
+                <div class="dynamic-island" style="background: black;"></div>
+                <div style="display:flex;gap:4px;align-items:center;font-size:13px">📶 🔋</div>
+            </div>
+
+            <div class="portal-bg">
+                
+                <div id="step-1" class="portal-card step active">
+                    <div class="icon-circle">✈️</div>
+                    <h1>Cabin Clarity</h1>
+                    <p>Real-time, translated flight announcements broadcast directly to your device.</p>
+                    <button class="btn-portal" onclick="nextStep()">Access Cabin Clarity</button>
+                    <div style="margin-top: 1.2rem; font-size: 0.75rem; color: #64748b;">Free to use via Airline Wi-Fi</div>
+                </div>
+
+                <div id="step-2" class="portal-card step">
+                    <h2 style="margin-top: 0; font-size: 1.4rem; color: white;">Setup Profile</h2>
+                    <p style="margin-bottom: 1.5rem; font-size: 0.85rem;">Select your language to initialize the onboard translation package.</p>
+                    
+                    <div class="form-group">
+                        <label>Live Translation</label>
+                        <select id="lang-select">
+                            <option value="en">English (Default)</option>
+                            <option value="es">Español (Spanish)</option>
+                            <option value="zh">中文 (Mandarin)</option>
+                            <option value="hi">हिन्दी (Hindi)</option>
+                            <option value="fr">Français (French)</option>
+                            <option value="ja">日本語 (Japanese)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group toggle-row">
+                        <div style="text-align: left;">
+                            <div style="font-weight: 600; color: white; font-size: 0.95rem;">ASL Video</div>
+                            <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 2px;">Sign Language overlays</div>
+                        </div>
+                        <label class="switch" style="margin:0; transform: scale(0.85);">
+                            <input type="checkbox" id="asl-toggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <button class="btn-portal" onclick="startApp()" id="btn-start" style="margin-top: 10px;">Download & Connect</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Update iOS Clock
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('ios-clock').innerText = `${now.getHours() % 12 || 12}:${now.getMinutes().toString().padStart(2,'0')}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // UI Flow
+        function nextStep() {
+            document.getElementById('step-1').classList.remove('active');
+            setTimeout(() => {
+                document.getElementById('step-2').classList.add('active');
+            }, 50);
+        }
+
+        function startApp() {
+            const btn = document.getElementById('btn-start');
+            const lang = document.getElementById('lang-select').value;
+            const langText = document.getElementById('lang-select').options[document.getElementById('lang-select').selectedIndex].text.split(' ')[0];
+            const asl = document.getElementById('asl-toggle').checked;
+            
+            // Save to memory so index.html/app.js can read it!
+            localStorage.setItem('cc_language', lang);
+            localStorage.setItem('cc_asl', asl);
+            
+            btn.disabled = true;
+            btn.innerText = `Loading ${langText}...`;
+
+            // Simulate the package download, then redirect smoothly
+            setTimeout(() => {
+                btn.innerText = "Connecting...";
+                setTimeout(() => {
+                    window.location.href = "index.html";
+                }, 600);
+            }, 1200);
+        }
+    </script>
+</body>
+</html>

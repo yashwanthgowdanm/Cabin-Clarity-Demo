@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cabin Clarity · Ground Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg: #0d0e12;
+    --bg2: #11131a;
+    --surface: #181b25;
+    --surface2: #1f2232;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --dim: #374151;
+    --green: #22c55e;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'Inter', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; display: flex; flex-direction: column; }
+
+/* HEADER */
+.header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+    background: var(--bg2);
+}
+.header-left { display: flex; align-items: center; gap: 16px; }
+.logo { font-family: var(--sans); font-size: 14px; font-weight: 800; letter-spacing: 0.08em; }
+.logo span { color: var(--blue); }
+.flight-tag {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    background: var(--surface); border: 1px solid var(--border2);
+    padding: 4px 10px; border-radius: 6px;
+}
+.ws-status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); font-family: var(--mono); }
+.ws-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s ease-in-out infinite; }
+.ws-dot.off { background: var(--amber); animation: blink 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+/* STATS ROW */
+.stats-row {
+    display: flex; gap: 12px;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+.stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    min-width: 110px;
+}
+.stat-label { font-size: 10px; color: var(--muted); font-family: var(--mono); letter-spacing: 0.06em; text-transform: uppercase; }
+.stat-value { font-size: 24px; font-weight: 700; margin-top: 4px; font-family: var(--mono); }
+.stat-value.green { color: var(--green); }
+.stat-value.red { color: var(--red); }
+.stat-value.amber { color: var(--amber); }
+.stat-value.blue { color: var(--blue); }
+
+/* LOG AREA */
+.log-container {
+    flex: 1; display: flex; flex-direction: column;
+    margin: 0 24px 24px 24px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--bg2);
+    min-height: 0;
+}
+.log-header {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface);
+    flex-shrink: 0;
+}
+.log-header-label { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: var(--muted); font-family: var(--mono); text-transform: uppercase; }
+
+/* Column headers */
+.log-cols {
+    display: grid;
+    grid-template-columns: 72px 110px 70px 60px 60px 130px 70px 70px 1fr;
+    gap: 0;
+    padding: 8px 16px;
+    font-size: 10px; color: var(--dim);
+    letter-spacing: 0.08em; text-transform: uppercase;
+    font-family: var(--mono);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+/* Log entries */
+.log-scroll {
+    flex: 1; overflow-y: auto;
+    padding: 8px;
+}
+.log-scroll::-webkit-scrollbar { width: 4px; }
+.log-scroll::-webkit-scrollbar-track { background: transparent; }
+.log-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.log-entry {
+    display: grid;
+    grid-template-columns: 72px 110px 70px 60px 60px 130px 70px 70px 1fr;
+    gap: 0;
+    padding: 7px 8px;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    border: 1px solid transparent;
+    align-items: start;
+    transition: background 0.1s;
+    animation: slide-in 0.2s ease;
+}
+@keyframes slide-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+.log-entry:hover { background: var(--surface); }
+.log-entry.routine { border-color: rgba(34,197,94,0.1); }
+.log-entry.safety { border-color: rgba(239,68,68,0.2); background: rgba(239,68,68,0.04); }
+.log-entry.operational { border-color: rgba(245,158,11,0.15); }
+
+.col { padding: 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.col.time { color: var(--dim); }
+.col.source { color: var(--muted); }
+.col.lang { color: var(--blue); }
+.col.conf-h { color: var(--green); }
+.col.conf-m { color: var(--amber); }
+.col.conf-l { color: var(--red); }
+.col.sev { color: var(--muted); }
+.col.urgency-r { color: var(--green); font-weight: 700; }
+.col.urgency-s { color: var(--red); font-weight: 700; }
+.col.urgency-o { color: var(--amber); font-weight: 700; }
+.col.asl-y { color: #a78bfa; }
+.col.asl-n { color: var(--dim); }
+.col.latency { color: var(--muted); }
+.col.caption { color: var(--text); opacity: 0.65; white-space: normal; font-size: 11px; }
+
+.log-empty {
+    display: flex; align-items: center; justify-content: center;
+    padding: 60px; color: var(--dim); font-family: var(--mono); font-size: 13px;
+    flex-direction: column; gap: 8px;
+}
+.log-empty-icon { font-size: 24px; opacity: 0.3; }
+
+/* Filter bar */
+.filter-bar {
+    display: flex; align-items: center; gap: 8px; margin-left: auto;
+}
+.filter-btn {
+    padding: 4px 10px; border-radius: 6px;
+    border: 1px solid var(--border2);
+    background: transparent; color: var(--muted);
+    font-size: 11px; font-family: var(--mono);
+    cursor: pointer; font-weight: 600;
+    transition: all 0.15s;
+}
+.filter-btn:hover, .filter-btn.active { background: var(--surface2); color: var(--text); }
+.filter-btn.green.active { border-color: var(--green); color: var(--green); }
+.filter-btn.red.active { border-color: var(--red); color: var(--red); }
+
+/* Sim panel on dashboard too */
+.dash-sim {
+    position: fixed; right: 20px; top: 50%; transform: translateY(-50%);
+    background: var(--surface); border: 1px solid var(--border2);
+    padding: 16px; border-radius: 12px; width: 200px; z-index: 100;
+}
+.dash-sim h3 { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px; }
+.dash-sim-btn {
+    width: 100%; padding: 8px 10px; margin-bottom: 5px;
+    border-radius: 7px; border: 1px solid var(--border2);
+    background: var(--surface2); color: var(--text);
+    font-size: 12px; font-family: var(--sans); font-weight: 600;
+    cursor: pointer; text-align: left; transition: background 0.15s;
+}
+.dash-sim-btn:hover { background: var(--bg2); }
+.dash-sim-btn.danger { border-color: rgba(239,68,68,0.3); color: var(--red); }
+.dash-sim-btn.emergency { background: #dc2626; color: white; border-color: #dc2626; }
+.dash-sim hr { border-color: var(--border); margin: 10px 0; }
+.dash-sim p { font-size: 10px; color: var(--dim); font-family: var(--mono); line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-left">
+        <div class="logo">CABIN<span>CLARITY</span></div>
+        <div class="flight-tag">CC-2847 · AA120 · PHX→SEA · GROUND OPS</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:20px">
+        <div id="event-count-wrap" style="font-size:12px;color:var(--muted);font-family:var(--mono)">
+            <span id="total-event-count">0</span> events logged
+        </div>
+        <div class="ws-status">
+            <div class="ws-dot off" id="dash-ws-dot"></div>
+            <span id="dash-ws-label">Waiting for passenger app...</span>
+        </div>
+    </div>
+</div>
+
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-label">Total Events</div>
+        <div class="stat-value blue" id="stat-total">0</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Routine</div>
+        <div class="stat-value green" id="stat-routine">0</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Safety</div>
+        <div class="stat-value red" id="stat-safety">0</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Low Confidence</div>
+        <div class="stat-value amber" id="stat-lowconf">0</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Avg Latency</div>
+        <div class="stat-value" id="stat-latency">—</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">ASL Triggered</div>
+        <div class="stat-value" id="stat-asl" style="color:#a78bfa">0</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Last Event</div>
+        <div class="stat-value" id="stat-last" style="font-size:14px;margin-top:6px">—</div>
+    </div>
+</div>
+
+<div class="log-container">
+    <div class="log-header">
+        <div class="ws-dot" id="live-dot" style="background:var(--amber);animation:blink 1s infinite"></div>
+        <div class="log-header-label">Realtime Event Stream · <span id="log-event-count">0</span> events</div>
+        <div class="filter-bar">
+            <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+            <button class="filter-btn green" onclick="setFilter('routine', this)">Routine</button>
+            <button class="filter-btn red" onclick="setFilter('safety', this)">Safety</button>
+            <button class="filter-btn" onclick="setFilter('operational', this)">Operational</button>
+        </div>
+    </div>
+
+    <div class="log-cols">
+        <div>TIME</div>
+        <div>SOURCE</div>
+        <div>LANG</div>
+        <div>CONF%</div>
+        <div>C-LEVEL</div>
+        <div>URGENCY</div>
+        <div>ASL</div>
+        <div>LATENCY</div>
+        <div>CAPTION / STATUS</div>
+    </div>
+
+    <div class="log-scroll" id="log-scroll">
+        <div class="log-empty">
+            <div class="log-empty-icon">📡</div>
+            <div>// No events yet. Open the Passenger App and fire events.</div>
+            <div style="font-size:11px;margin-top:4px">If running standalone, use the sim panel →</div>
+        </div>
+    </div>
+</div>
+
+<!-- Standalone sim panel (works without the passenger app open) -->
+<div class="dash-sim">
+    <h3>Sim Panel</h3>
+    <button class="dash-sim-btn" onclick="injectEvent('meal')">🍴 Meal Service</button>
+    <button class="dash-sim-btn" onclick="injectEvent('landing')">🛬 Initial Descent</button>
+    <button class="dash-sim-btn" onclick="injectEvent('low_conf_routine')">◐ Low Conf Routine</button>
+    <button class="dash-sim-btn danger" onclick="injectEvent('turbulence')">⚠ Turbulence</button>
+    <button class="dash-sim-btn danger" onclick="injectEvent('severe_turbulence')">⚠⚠ Severe Turb</button>
+    <button class="dash-sim-btn danger" onclick="injectEvent('low_conf_safety')">◐⚠ Low Conf Safety</button>
+    <button class="dash-sim-btn emergency" onclick="injectEvent('brace')">🚨 BRACE</button>
+    <hr>
+    <button class="dash-sim-btn" onclick="injectEvent('feed_lost')">📵 Feed Lost</button>
+    <hr>
+    <p>Events also sync from<br>the passenger app window.</p>
+</div>
+
+<script src="transport.js"></script>
+<script>
+// ─── SHARED EVENT DEFINITIONS ──────────────────────────────────────────────
+const SCENARIOS = {
+    turbulence: { urgency: 'SAFETY', severity: 'moderate', confidence_level: 'high', confidence: 0.94, source: 'template_snap', language: 'en-US', caption: 'Ladies and gentlemen please return to your seats and fasten your seatbelts. We are entering an area of turbulence.', asl_clip_id: 'asl_seatbelt_003', action: 'seatbelt_on', template_match: 'seatbelt_on', latency: 88 },
+    severe_turbulence: { urgency: 'SAFETY', severity: 'high', confidence_level: 'high', confidence: 0.99, source: 'template_snap', language: 'en-US', caption: 'Attention all passengers. We are entering severe turbulence. Please remain seated with your seatbelt securely fastened.', asl_clip_id: 'asl_turbulence_001', action: 'turbulence', template_match: 'severe_turbulence', latency: 62 },
+    brace: { urgency: 'SAFETY', severity: 'critical', confidence_level: 'high', confidence: 1.0, source: 'template_snap', language: 'en-US', caption: 'EMERGENCY BRACE — adopt brace position now. Head down, hands behind head. Brace, brace, brace.', asl_clip_id: 'asl_brace_001', action: 'brace', template_match: 'emergency_brace', latency: 24 },
+    meal: { urgency: 'ROUTINE', confidence_level: 'high', confidence: 0.97, source: 'asr', language: 'en-US', caption: 'Cabin crew please begin the meal service for the main cabin.', asl_clip_id: null, action: null, template_match: 'meal_service_start', latency: 142 },
+    landing: { urgency: 'ROUTINE', confidence_level: 'high', confidence: 0.96, source: 'asr', language: 'en-US', caption: 'Ladies and gentlemen we have begun our initial descent into Seattle. Please stow your tray tables.', asl_clip_id: null, action: null, template_match: 'initial_descent', latency: 168 },
+    low_conf_routine: { urgency: 'ROUTINE', confidence_level: 'low', confidence: 0.49, source: 'pram', language: 'en-US', caption: 'We will be serving [unclear] shortly and the cabin crew will [unclear] any questions.', asl_clip_id: null, action: null, template_match: null, latency: 312 },
+    low_conf_safety: { urgency: 'SAFETY', severity: 'moderate', confidence_level: 'low', confidence: 0.41, source: 'asr', language: 'en-US', caption: 'Please [unclear] your seatbelts and remain [unclear] — crew will [unclear] shortly.', asl_clip_id: 'asl_seatbelt_003', action: 'seatbelt_on', template_match: null, latency: 395 },
+    feed_lost: { urgency: 'OPERATIONAL', status: 'audio_feed_disconnected', source: 'system', latency: 0 },
+};
+
+// ─── STATE ─────────────────────────────────────────────────────────────────
+const stats = { total: 0, routine: 0, safety: 0, lowconf: 0, asl: 0, latencies: [] };
+let currentFilter = 'all';
+const allEntries = [];
+let connectedToApp = false;
+
+// ─── RECEIVE FROM PASSENGER APP ────────────────────────────────────────────
+const transport = new CabinTransport();
+
+transport.on('announcement', (evt) => {
+  if (!connectedToApp) {
+    connectedToApp = true;
+    document.getElementById('dash-ws-dot').style.background = 'var(--green)';
+    document.getElementById('dash-ws-dot').style.animation = 'pulse 2s infinite';
+    document.getElementById('dash-ws-label').textContent = 'Connected to passenger app';
+  }
+  appendEvent(evt);
+});
+
+transport.on('status', ({ state }) => {
+  if (state === 'connected') {
+    document.getElementById('dash-ws-dot').style.background = 'var(--green)';
+    document.getElementById('dash-ws-label').textContent = 'Connected';
+  }
+  if (state === 'reconnecting') {
+    document.getElementById('dash-ws-dot').style.background = 'var(--amber)';
+    document.getElementById('dash-ws-label').textContent = 'Reconnecting...';
+  }
+});
+
+// ─── STANDALONE SIM ────────────────────────────────────────────────────────
+function injectEvent(key) {
+    const evt = SCENARIOS[key];
+    if (!evt) return;
+    appendEvent({ ...evt, _ts: Date.now() });
+}
+
+// ─── RENDER EVENT ──────────────────────────────────────────────────────────
+function appendEvent(evt) {
+    const scroll = document.getElementById('log-scroll');
+    const empty = scroll.querySelector('.log-empty');
+    if (empty) scroll.innerHTML = '';
+
+    const now = new Date(evt._ts || Date.now());
+    const timeStr = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+
+    const urgency = evt.urgency || 'OPERATIONAL';
+    const entryClass = urgency === 'SAFETY' ? 'safety' : urgency === 'ROUTINE' ? 'routine' : 'operational';
+
+    // Stats
+    stats.total++;
+    if (urgency === 'ROUTINE') stats.routine++;
+    if (urgency === 'SAFETY') stats.safety++;
+    if (evt.confidence_level === 'low' || evt.confidence_level === 'medium') stats.lowconf++;
+    if (evt.asl_clip_id) stats.asl++;
+    if (evt.latency > 0) stats.latencies.push(evt.latency);
+
+    updateStats(timeStr);
+
+    const entry = {
+        class: entryClass,
+        urgency, evt, timeStr,
+        html: buildEntryHTML(evt, urgency, timeStr)
+    };
+    allEntries.unshift(entry);
+
+    if (currentFilter === 'all' || entry.class === currentFilter) {
+        const el = createEntryEl(entry);
+        scroll.insertBefore(el, scroll.firstChild);
+        scroll.scrollTop = 0;
+        if (scroll.children.length > 200) scroll.removeChild(scroll.lastChild);
+    }
+
+    // Update live dot
+    const liveDot = document.getElementById('live-dot');
+    liveDot.style.background = urgency === 'SAFETY' ? 'var(--red)' : urgency === 'ROUTINE' ? 'var(--green)' : 'var(--amber)';
+    setTimeout(() => { liveDot.style.background = 'var(--green)'; }, 2000);
+}
+
+function buildEntryHTML(evt, urgency, timeStr) {
+    const confPct = evt.confidence != null ? Math.round(evt.confidence * 100) + '%' : '—';
+    const confClass = evt.confidence > 0.85 ? 'conf-h' : evt.confidence > 0.6 ? 'conf-m' : 'conf-l';
+    const urgencyClass = urgency === 'SAFETY' ? 'urgency-s' : urgency === 'ROUTINE' ? 'urgency-r' : 'urgency-o';
+    const urgencyText = urgency + (evt.severity ? '/' + evt.severity : '');
+    const aslText = evt.asl_clip_id ? '▶ ' + evt.asl_clip_id : '—';
+    const aslClass = evt.asl_clip_id ? 'asl-y' : 'asl-n';
+    const latText = evt.latency > 0 ? evt.latency + 'ms' : '—';
+    const captionText = evt.caption
+        ? '"' + evt.caption.slice(0, 60) + (evt.caption.length > 60 ? '…' : '') + '"'
+        : evt.status || '—';
+    const cLevel = evt.confidence_level || '—';
+    const sevText = evt.severity || (evt.status ? 'system' : '—');
+
+    return `
+        <div class="col time">${timeStr}</div>
+        <div class="col source">${evt.source || '—'}</div>
+        <div class="col lang">${evt.language || '—'}</div>
+        <div class="col ${confClass}">${confPct}</div>
+        <div class="col sev">${cLevel}</div>
+        <div class="col ${urgencyClass}">${urgencyText}</div>
+        <div class="col ${aslClass}">${aslText}</div>
+        <div class="col latency">${latText}</div>
+        <div class="col caption">${captionText}${evt.template_match ? ' [tmpl:' + evt.template_match + ']' : ''}</div>
+    `;
+}
+
+function createEntryEl(entry) {
+    const el = document.createElement('div');
+    el.className = `log-entry ${entry.class}`;
+    el.innerHTML = entry.html;
+    return el;
+}
+
+function updateStats(lastTime) {
+    document.getElementById('stat-total').textContent = stats.total;
+    document.getElementById('stat-routine').textContent = stats.routine;
+    document.getElementById('stat-safety').textContent = stats.safety;
+    document.getElementById('stat-lowconf').textContent = stats.lowconf;
+    document.getElementById('stat-asl').textContent = stats.asl;
+    const avg = stats.latencies.length
+        ? Math.round(stats.latencies.reduce((a, b) => a + b, 0) / stats.latencies.length)
+        : null;
+    document.getElementById('stat-latency').textContent = avg != null ? avg + 'ms' : '—';
+    document.getElementById('stat-last').textContent = lastTime;
+    document.getElementById('total-event-count').textContent = stats.total;
+    document.getElementById('log-event-count').textContent = stats.total;
+}
+
+// ─── FILTER ────────────────────────────────────────────────────────────────
+function setFilter(filter, btn) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const scroll = document.getElementById('log-scroll');
+    scroll.innerHTML = '';
+
+    const filtered = filter === 'all' ? allEntries : allEntries.filter(e => e.class === filter);
+    if (!filtered.length) {
+        scroll.innerHTML = '<div class="log-empty"><div class="log-empty-icon">🔍</div><div>No events matching this filter.</div></div>';
+        return;
+    }
+    filtered.forEach(entry => {
+        scroll.appendChild(createEntryEl(entry));
+    });
+}
+</script>
+</body>
+</html>
