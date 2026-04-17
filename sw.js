@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cabin-clarity-v3';
+const CACHE_NAME = 'cabin-clarity-v5';
 const assets = ['./', './index.html', './dashboard.html', './styles.css', './app.js', './manifest.json'];
 
 self.addEventListener('install', e => {

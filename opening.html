@@ -1,179 +1,496 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cabin Clarity | Wi-Fi Portal</title>
-    
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <style>
-        /* Scoped Wi-Fi Portal Styles for inside the mobile screen */
-        .portal-bg {
-            background: #0f172a;
-            background-image: radial-gradient(circle at top right, #1e293b, #0f172a);
-            color: white;
-            height: 100%;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cabin Clarity | Wi-Fi Portal</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
-        .portal-card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            padding: 1.5rem;
-            border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
-            width: 100%;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
+  <style>
+    :root {
+      --portal-bg: #08111f;
+      --portal-surface: rgba(10, 18, 32, 0.94);
+      --portal-text: #f8fafc;
+      --portal-muted: #94a3b8;
+      --portal-line: rgba(255, 255, 255, 0.10);
+      --portal-navy: #0f4a8a;
+      --portal-navy-2: #163c6a;
+      --portal-amber: #d4af37;
+      --portal-shadow: 0 18px 50px rgba(0, 0, 0, 0.42);
+      --portal-radius: 22px;
+    }
 
-        .portal-bg h1 { margin-top: 0; font-size: 1.8rem; letter-spacing: -0.025em; margin-bottom: 0.5rem; color: white;}
-        .portal-bg p { color: #94a3b8; line-height: 1.5; margin-bottom: 1.5rem; font-size: 0.9rem; }
-        
-        .btn-portal {
-            background: #2563eb; color: white; border: none; padding: 1rem;
-            font-size: 1.05rem; font-weight: 700; border-radius: 12px;
-            cursor: pointer; width: 100%; transition: all 0.2s;
-            box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.39);
-        }
-        .btn-portal:hover { background: #1d4ed8; transform: translateY(-2px); }
-        .btn-portal:disabled { background: #475569; cursor: wait; transform: none; box-shadow: none; }
-        
-        .form-group { text-align: left; margin-bottom: 1.2rem; }
-        .form-group label { display: block; margin-bottom: 0.4rem; font-weight: 600; color: #cbd5e1; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
-        
-        .portal-bg select {
-            width: 100%; padding: 0.8rem; border-radius: 12px; border: 1px solid #475569;
-            background: #1e293b; color: white; font-size: 1rem; outline: none;
-            font-family: 'Inter', sans-serif;
-            appearance: none;
-        }
+    html, body { height: 100%; margin: 0; }
 
-        .toggle-row { display: flex; align-items: center; justify-content: space-between; background: #1e293b; padding: 1rem; border-radius: 12px; border: 1px solid #475569; }
-        
-        /* Step animations */
-        .step { display: none; }
-        .step.active { display: block; animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(212, 175, 55, 0.10), transparent 30%),
+        radial-gradient(circle at 80% 20%, rgba(15, 74, 138, 0.18), transparent 28%),
+        linear-gradient(180deg, #e8edf3 0%, #dfe6ef 100%);
+      overflow: hidden;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
 
-        .icon-circle {
-            width: 70px; height: 70px; background: rgba(37, 99, 235, 0.2);
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 2.2rem; margin: 0 auto 1.2rem auto; border: 2px solid #2563eb;
-        }
+    .device-frame { box-shadow: 0 30px 80px rgba(2, 6, 23, 0.24); }
+    .device-screen { background: linear-gradient(180deg, #0b1322 0%, #08111f 100%) !important; }
+    .device-screen::before { opacity: 0.035; }
 
-        /* Adjust body to center the device frame */
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #e5e7eb; /* Neutral background behind phone */
-            margin: 0;
-        }
-    </style>
+    .portal-shell {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      color: var(--portal-text);
+    }
+
+    .portal-header {
+      padding: 18px 20px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--portal-line);
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+      flex-shrink: 0;
+    }
+
+    .brand-lockup { display: flex; flex-direction: column; gap: 3px; }
+    .brand-mark {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+    }
+    .brand-mark .line {
+      width: 26px;
+      height: 2px;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--portal-amber), transparent);
+      display: inline-block;
+    }
+    .brand-subtitle { color: var(--portal-muted); font-size: 0.78rem; }
+
+    .portal-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--portal-muted);
+      font-size: 0.76rem;
+      font-weight: 600;
+      padding: 7px 10px;
+      border: 1px solid var(--portal-line);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.02);
+      white-space: nowrap;
+    }
+    .portal-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4ade80;
+      box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.12);
+      flex-shrink: 0;
+    }
+
+    .portal-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 18px 18px 24px;
+      gap: 18px;
+      position: relative;
+    }
+    .portal-main::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 8%, rgba(212, 175, 55, 0.10), transparent 35%);
+      pointer-events: none;
+    }
+
+    .hero-panel, .setup-card {
+      position: relative;
+      z-index: 1;
+      border-radius: var(--portal-radius);
+      background: var(--portal-surface);
+      border: 1px solid var(--portal-line);
+      box-shadow: var(--portal-shadow);
+      overflow: hidden;
+    }
+
+    .hero-panel { padding: 18px; }
+    .hero-panel::after {
+      content: "";
+      position: absolute;
+      inset: auto -10% -35% -10%;
+      height: 160px;
+      background: radial-gradient(circle, rgba(212, 175, 55, 0.18), transparent 62%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(212, 175, 55, 0.12);
+      color: #f5d77e;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .hero-copy h1 {
+      margin: 0 0 10px;
+      font-size: 2.1rem;
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+      color: var(--portal-text);
+    }
+    .hero-copy p {
+      margin: 0;
+      color: var(--portal-muted);
+      line-height: 1.55;
+      font-size: 0.95rem;
+      max-width: 28ch;
+    }
+
+    /* Key change: stack the route card under the text */
+    .hero-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .flight-card {
+      width: 100%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.03));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 140px;
+    }
+    .flight-card .route {
+      font-size: 0.78rem;
+      color: #e2e8f0;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .flight-card .meta {
+      color: var(--portal-muted);
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+    .flight-card .seal {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.72rem;
+      color: #f5d77e;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .step { display: none; }
+    .step.active { display: block; animation: rise 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+    .setup-card {
+      padding: 18px;
+      background: rgba(10, 18, 32, 0.96);
+    }
+    .setup-card h2 {
+      margin: 0 0 8px;
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+    }
+    .setup-card p {
+      margin: 0 0 16px;
+      color: var(--portal-muted);
+      line-height: 1.5;
+      font-size: 0.9rem;
+    }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #cbd5e1;
+    }
+
+    .portal-bg select {
+      width: 100%;
+      padding: 0.95rem;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+      color: white;
+      font-size: 0.98rem;
+      outline: none;
+      font-family: inherit;
+      appearance: none;
+    }
+    .portal-bg select:focus {
+      border-color: rgba(212, 175, 55, 0.55);
+      box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.10);
+    }
+    .portal-bg select option {
+    background: #0f172a;   /* dark background */
+    color: #ffffff;        /* white text */
+   }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      background: rgba(255,255,255,0.04);
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .toggle-copy { text-align: left; }
+    .toggle-copy strong {
+      display: block;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 2px;
+    }
+    .toggle-copy span { font-size: 0.75rem; color: var(--portal-muted); }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      inset: 0;
+      cursor: pointer;
+      background: rgba(148, 163, 184, 0.28);
+      border-radius: 999px;
+      transition: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+    .slider:before {
+      content: "";
+      position: absolute;
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      top: 2px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    }
+    input:checked + .slider { background: linear-gradient(90deg, var(--portal-navy), #2563eb); }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    .btn-portal {
+      width: 100%;
+      padding: 1rem 1.05rem;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      color: white;
+      font-size: 1rem;
+      font-weight: 800;
+      background: linear-gradient(180deg, var(--portal-navy), var(--portal-navy-2));
+      box-shadow: 0 12px 28px rgba(15, 74, 138, 0.28);
+      transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.16s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.16s ease;
+    }
+    .btn-portal:hover { transform: translateY(-1px); box-shadow: 0 16px 34px rgba(15, 74, 138, 0.34); }
+    .btn-portal:disabled { opacity: 0.65; cursor: wait; box-shadow: none; transform: none; }
+
+    .hint-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 12px;
+      color: var(--portal-muted);
+      font-size: 0.72rem;
+      line-height: 1.45;
+    }
+    .hint-row span:last-child { color: #cbd5e1; }
+    .footer-note { margin-top: 14px; text-align: center; color: #7f8ca3; font-size: 0.75rem; }
+
+    .ambient-lines {
+      position: absolute;
+      inset: auto 0 0 0;
+      height: 110px;
+      background: linear-gradient(180deg, transparent, rgba(212, 175, 55, 0.08));
+      pointer-events: none;
+    }
+
+    @media (max-width: 768px) {
+      body { background: #08111f; }
+      .device-frame {
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+        padding: 0;
+      }
+      .device-screen { border-radius: 0 !important; }
+    }
+
+    @media (max-width: 430px) {
+      .portal-header { padding: 16px 16px 12px; }
+      .portal-main { padding: 16px; }
+      .hero-panel, .setup-card { padding: 16px; }
+      .hero-copy h1 { font-size: 1.82rem; line-height: 1.06; }
+      .hero-copy p { max-width: none; }
+      .hint-row {
+        flex-direction: column;
+        gap: 4px;
+        align-items: flex-start;
+      }
+      .flight-card { min-height: auto; }
+    }
+  </style>
 </head>
 <body>
-
-    <div class="device-frame">
-        <div class="device-screen" style="background: #0f172a; border-radius: 40px; overflow: hidden;">
-            
-            <div class="ios-status-bar" style="color: white; z-index: 10;">
-                <div id="ios-clock">9:41</div>
-                <div class="dynamic-island" style="background: black;"></div>
-                <div style="display:flex;gap:4px;align-items:center;font-size:13px">📶 🔋</div>
-            </div>
-
-            <div class="portal-bg">
-                
-                <div id="step-1" class="portal-card step active">
-                    <div class="icon-circle">✈️</div>
-                    <h1>Cabin Clarity</h1>
-                    <p>Real-time, translated flight announcements broadcast directly to your device.</p>
-                    <button class="btn-portal" onclick="nextStep()">Access Cabin Clarity</button>
-                    <div style="margin-top: 1.2rem; font-size: 0.75rem; color: #64748b;">Free to use via Airline Wi-Fi</div>
-                </div>
-
-                <div id="step-2" class="portal-card step">
-                    <h2 style="margin-top: 0; font-size: 1.4rem; color: white;">Setup Profile</h2>
-                    <p style="margin-bottom: 1.5rem; font-size: 0.85rem;">Select your language to initialize the onboard translation package.</p>
-                    
-                    <div class="form-group">
-                        <label>Live Translation</label>
-                        <select id="lang-select">
-                            <option value="en">English (Default)</option>
-                            <option value="es">Español (Spanish)</option>
-                            <option value="zh">中文 (Mandarin)</option>
-                            <option value="hi">हिन्दी (Hindi)</option>
-                            <option value="fr">Français (French)</option>
-                            <option value="ja">日本語 (Japanese)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group toggle-row">
-                        <div style="text-align: left;">
-                            <div style="font-weight: 600; color: white; font-size: 0.95rem;">ASL Video</div>
-                            <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 2px;">Sign Language overlays</div>
-                        </div>
-                        <label class="switch" style="margin:0; transform: scale(0.85);">
-                            <input type="checkbox" id="asl-toggle" checked>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-
-                    <button class="btn-portal" onclick="startApp()" id="btn-start" style="margin-top: 10px;">Download & Connect</button>
-                </div>
-
-            </div>
+  <div class="device-frame">
+    <div class="device-screen" style="background:#08111f; border-radius:40px; overflow:hidden;">
+      <div class="portal-shell">
+        <div class="ios-status-bar" style="color:white; z-index: 10;">
+          <div id="ios-clock">9:41</div>
+          <div class="dynamic-island" style="background:black;"></div>
+          <div style="display:flex;gap:4px;align-items:center;font-size:13px">📶 🔋</div>
         </div>
+
+        <div class="portal-header">
+          <div class="brand-lockup">
+            <div class="brand-mark"><span class="line"></span><span>Cabin Clarity</span></div>
+            <div class="brand-subtitle">Onboard Wi‑Fi portal</div>
+          </div>
+          <div class="portal-status"><span class="portal-status-dot"></span><span>Secure cabin network</span></div>
+        </div>
+
+        <main class="portal-main portal-bg">
+          <div class="hero-panel step active" id="step-1">
+            <div class="eyebrow">Passenger Access</div>
+            <div class="hero-grid">
+              <div class="hero-copy">
+                <h1>Live flight announcements, made clear.</h1>
+                <p>Cabin Clarity shows real-time captions, safety prompts, and ASL overlays during your flight.</p>
+              </div>
+
+              <div class="flight-card">
+                <div>
+                  <div class="route">PHX → LHR</div>
+                  <div class="meta" style="margin-top:10px;">English · ASL available<br />Flight network ready on board</div>
+                </div>
+                <div class="seal">● Service active</div>
+              </div>
+            </div>
+
+            <div style="margin-top:16px;">
+              <button class="btn-portal" onclick="nextStep()">Continue to Cabin Clarity</button>
+              <div class="hint-row">
+                <span>Free through airline Wi‑Fi</span>
+                <span>Designed for in-flight use</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="step-2" class="setup-card step">
+            <h2>Set preferences</h2>
+            <p>Choose your language and accessibility options before entering the live cabin view.</p>
+
+            <div class="form-group">
+              <label for="lang-select">Live translation</label>
+              <select id="lang-select">
+                <option value="en">English (default)</option>
+                <option value="es">Español (Spanish)</option>
+                <option value="zh">中文 (Mandarin)</option>
+                <option value="hi">हिन्दी (Hindi)</option>
+                <option value="fr">Français (French)</option>
+                <option value="ja">日本語 (Japanese)</option>
+              </select>
+            </div>
+
+            <div class="form-group toggle-row">
+              <div class="toggle-copy">
+                <strong>ASL video</strong>
+                <span>Show sign language overlays when available</span>
+              </div>
+              <label class="switch" style="margin:0;">
+                <input type="checkbox" id="asl-toggle" checked />
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <button class="btn-portal" onclick="startApp()" id="btn-start" style="margin-top: 12px;">Enter Cabin Clarity</button>
+            <div class="footer-note">Your preferences save automatically for this session.</div>
+          </div>
+        </main>
+
+        <div class="ambient-lines"></div>
+      </div>
     </div>
+  </div>
 
-    <script>
-        // Update iOS Clock
-        function updateClock() {
-            const now = new Date();
-            document.getElementById('ios-clock').innerText = `${now.getHours() % 12 || 12}:${now.getMinutes().toString().padStart(2,'0')}`;
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
+  <script>
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('ios-clock').innerText = `${now.getHours() % 12 || 12}:${now.getMinutes().toString().padStart(2,'0')}`;
+    }
 
-        // UI Flow
-        function nextStep() {
-            document.getElementById('step-1').classList.remove('active');
-            setTimeout(() => {
-                document.getElementById('step-2').classList.add('active');
-            }, 50);
-        }
+    setInterval(updateClock, 1000);
+    updateClock();
 
-        function startApp() {
-            const btn = document.getElementById('btn-start');
-            const lang = document.getElementById('lang-select').value;
-            const langText = document.getElementById('lang-select').options[document.getElementById('lang-select').selectedIndex].text.split(' ')[0];
-            const asl = document.getElementById('asl-toggle').checked;
-            
-            // Save to memory so index.html/app.js can read it!
-            localStorage.setItem('cc_language', lang);
-            localStorage.setItem('cc_asl', asl);
-            
-            btn.disabled = true;
-            btn.innerText = `Loading ${langText}...`;
+    function nextStep() {
+      const step1 = document.getElementById('step-1');
+      const step2 = document.getElementById('step-2');
+      step1.classList.remove('active');
+      setTimeout(() => step2.classList.add('active'), 60);
+    }
 
-            // Simulate the package download, then redirect smoothly
-            setTimeout(() => {
-                btn.innerText = "Connecting...";
-                setTimeout(() => {
-                    window.location.href = "index.html";
-                }, 600);
-            }, 1200);
-        }
-    </script>
+    function startApp() {
+      const btn = document.getElementById('btn-start');
+      const langSelect = document.getElementById('lang-select');
+      const lang = langSelect.value;
+      const langText = langSelect.options[langSelect.selectedIndex].text.split(' ')[0];
+      const asl = document.getElementById('asl-toggle').checked;
+
+      localStorage.setItem('cc_language', lang);
+      localStorage.setItem('cc_asl', String(asl));
+
+      btn.disabled = true;
+      btn.innerText = `Loading ${langText}...`;
+
+      setTimeout(() => {
+        btn.innerText = 'Connecting...';
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 550);
+      }, 900);
+    }
+  </script>
 </body>
 </html>
