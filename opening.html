@@ -428,21 +428,16 @@
                 <option value="en">English (default)</option>
                 <option value="es">Español (Spanish)</option>
                 <option value="zh">中文 (Mandarin)</option>
-                <option value="hi">हिन्दी (Hindi)</option>
-                <option value="fr">Français (French)</option>
-                <option value="ja">日本語 (Japanese)</option>
               </select>
             </div>
 
-            <div class="form-group toggle-row">
-              <div class="toggle-copy">
-                <strong>ASL video</strong>
-                <span>Show sign language overlays when available</span>
-              </div>
-              <label class="switch" style="margin:0;">
-                <input type="checkbox" id="asl-toggle" checked />
-                <span class="slider"></span>
-              </label>
+            <div class="form-group">
+              <label for="sign-lang-select">Sign-language overlay</label>
+              <select id="sign-lang-select">
+                <option value="none">None</option>
+                <option value="asl">ASL</option>
+                <option value="bsl">BSL</option>
+              </select>
             </div>
 
             <button class="btn-portal" onclick="startApp()" id="btn-start" style="margin-top: 12px;">Enter Cabin Clarity</button>
@@ -454,43 +449,55 @@
       </div>
     </div>
   </div>
+<script>
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('ios-clock').innerText =
+      `${now.getHours() % 12 || 12}:${now.getMinutes().toString().padStart(2, '0')}`;
+  }
 
-  <script>
-    function updateClock() {
-      const now = new Date();
-      document.getElementById('ios-clock').innerText = `${now.getHours() % 12 || 12}:${now.getMinutes().toString().padStart(2,'0')}`;
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  function nextStep() {
+    const step1 = document.getElementById('step-1');
+    const step2 = document.getElementById('step-2');
+    step1.classList.remove('active');
+    setTimeout(() => step2.classList.add('active'), 60);
+  }
+
+  function startApp() {
+    const btn = document.getElementById('btn-start');
+    const langSelect = document.getElementById('lang-select');
+    const signSelect = document.getElementById('sign-lang-select');
+
+    if (!btn || !langSelect || !signSelect) {
+      console.error('Missing onboarding elements');
+      return;
     }
 
-    setInterval(updateClock, 1000);
-    updateClock();
+    const captionLanguage = langSelect.value;
+    const signLanguage = signSelect.value;
+    const captionText = langSelect.options[langSelect.selectedIndex].text.split(' ')[0];
 
-    function nextStep() {
-      const step1 = document.getElementById('step-1');
-      const step2 = document.getElementById('step-2');
-      step1.classList.remove('active');
-      setTimeout(() => step2.classList.add('active'), 60);
-    }
+    // New keys
+    localStorage.setItem('cc_caption_language', captionLanguage);
+    localStorage.setItem('cc_sign_language', signLanguage);
 
-    function startApp() {
-      const btn = document.getElementById('btn-start');
-      const langSelect = document.getElementById('lang-select');
-      const lang = langSelect.value;
-      const langText = langSelect.options[langSelect.selectedIndex].text.split(' ')[0];
-      const asl = document.getElementById('asl-toggle').checked;
+    // Legacy keys so your current app still works
+    localStorage.setItem('cc_language', captionLanguage);
+    localStorage.setItem('cc_asl', String(signLanguage !== 'none'));
 
-      localStorage.setItem('cc_language', lang);
-      localStorage.setItem('cc_asl', String(asl));
+    btn.disabled = true;
+    btn.innerText = `Loading ${captionText}...`;
 
-      btn.disabled = true;
-      btn.innerText = `Loading ${langText}...`;
-
+    setTimeout(() => {
+      btn.innerText = 'Connecting...';
       setTimeout(() => {
-        btn.innerText = 'Connecting...';
-        setTimeout(() => {
-          window.location.href = 'index.html';
-        }, 550);
-      }, 900);
-    }
-  </script>
+        window.location.href = 'index.html';
+      }, 550);
+    }, 900);
+  }
+</script>
 </body>
 </html>

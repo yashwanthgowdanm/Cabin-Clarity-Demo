@@ -32,6 +32,18 @@ class CabinWebSocket {
     }
 }
 
+    const CAPTION_LABELS = {
+        en: 'English',
+        es: 'Spanish',
+        zh: 'Mandarin'
+    };
+
+    const SIGN_LABELS = {
+        none: 'none',
+        asl: 'ASL',
+        bsl: 'BSL'
+    };
+
 // ─── SAFETY ACTION SVG ICONS ─────────────────────────────────────────────────
 const SAFETY_SVGS = {
     seatbelt_on: `<svg viewBox="0 0 36 36"><circle cx="18" cy="9" r="5"/><path d="M12 16 Q12 22 18 26 Q24 22 24 16"/><path d="M10 28 Q18 20 26 28"/><line x1="18" y1="26" x2="18" y2="34"/></svg>`,
@@ -44,98 +56,208 @@ const SAFETY_SVGS = {
 
 // ─── SCENARIO DEFINITIONS ─────────────────────────────────────────────────────
 const SCENARIOS = {
-    turbulence: {
-        urgency: 'SAFETY', severity: 'moderate',
-        confidence_level: 'high', confidence: 0.94,
-        source: 'template_snap', language: 'en-US',
-        caption: 'Ladies and gentlemen please return to your seats and fasten your seatbelts. We are entering an area of turbulence.',
-        plain: 'Bumpy air ahead. Sit down and buckle up now.',
-        word_confidences: null,
-        asl_clip_id: 'asl_seatbelt_003',
-        action: 'seatbelt_on',
-        template_match: 'seatbelt_on',
-        latency: 88
-    },
-    severe_turbulence: {
-        urgency: 'SAFETY', severity: 'high',
-        confidence_level: 'high', confidence: 0.99,
-        source: 'template_snap', language: 'en-US',
-        caption: 'Attention all passengers. We are entering severe turbulence. Please remain seated with your seatbelt securely fastened. Crew please be seated immediately.',
-        plain: 'Severe bumps — stay seated, belt fastened tight.',
-        word_confidences: null,
-        asl_clip_id: 'asl_turbulence_001',
-        action: 'turbulence',
-        template_match: 'severe_turbulence',
-        latency: 62
-    },
-    brace: {
-        urgency: 'SAFETY', severity: 'critical',
-        confidence_level: 'high', confidence: 1.0,
-        source: 'template_snap', language: 'en-US',
-        caption: 'EMERGENCY BRACE — adopt brace position now. Head down, hands behind head. Brace, brace, brace.',
-        plain: 'Emergency landing. Bend forward, hands on head. Do it NOW.',
-        word_confidences: null,
-        asl_clip_id: 'asl_brace_001',
-        action: 'brace',
-        template_match: 'emergency_brace',
-        latency: 24
-    },
-    meal: {
-        urgency: 'ROUTINE', severity: null,
-        confidence_level: 'high', confidence: 0.97,
-        source: 'asr', language: 'en-US',
-        caption: 'Cabin crew please begin the meal service for the main cabin. We will start from the front of the aircraft.',
-        plain: 'Food and drinks are coming soon.',
-        word_confidences: null,
-        asl_clip_id: null,
-        action: null,
-        template_match: 'meal_service_start',
-        latency: 142
-    },
-    landing: {
-        urgency: 'ROUTINE', severity: null,
-        confidence_level: 'high', confidence: 0.96,
-        source: 'asr', language: 'en-US',
-        caption: 'Ladies and gentlemen we have begun our initial descent into Seattle. Please stow your tray tables and return your seats to the upright position.',
-        plain: 'We are landing soon. Pack up and buckle in.',
-        word_confidences: null,
-        asl_clip_id: null,
-        action: null,
-        template_match: 'initial_descent',
-        latency: 168
-    },
-    low_conf_routine: {
-        urgency: 'ROUTINE', severity: null,
-        confidence_level: 'low', confidence: 0.49,
-        source: 'pram', language: 'en-US',
-        caption: 'We will be serving [unclear] shortly and the cabin crew will [unclear] any questions you may have about [unclear].',
-        plain: 'Service coming — some words unclear due to audio quality.',
-        word_confidences: [0.92, 0.9, 0.88, 0.3, 0.85, 0.82, 0.9, 0.75, 0.3, 0.7, 0.65, 0.88, 0.6, 0.55, 0.3, 0.45, 0.4],
-        asl_clip_id: null,
-        action: null,
-        template_match: null,
-        latency: 312
-    },
-    low_conf_safety: {
-        urgency: 'SAFETY', severity: 'moderate',
-        confidence_level: 'low', confidence: 0.41,
-        source: 'asr', language: 'en-US',
-        caption: 'Please [unclear] your seatbelts and remain [unclear] — the crew will [unclear] your area shortly.',
-        plain: 'Safety alert — some words unclear. Fasten your seatbelt now.',
-        word_confidences: [0.85, 0.25, 0.2, 0.82, 0.88, 0.9, 0.3, 0.2, 0.85, 0.8, 0.3, 0.2, 0.45, 0.82, 0.7],
-        asl_clip_id: 'asl_seatbelt_003',
-        action: 'seatbelt_on',
-        template_match: null,
-        latency: 395
-    },
-    feed_lost: {
-        urgency: 'OPERATIONAL', status: 'audio_feed_disconnected',
-        source: 'system', latency: 0
-    },
-    reconnect: {
-        urgency: 'OPERATIONAL', status: 'ws_reconnecting',
-        source: 'system', latency: 0
-    }
+  turbulence: {
+    id: 'turbulence',
+    urgency: 'SAFETY',
+    severity: 'moderate',
+    confidence_level: 'high',
+    confidence: 0.94,
+    source: 'template_snap',              // deterministic scripted trigger
+    event_kind: 'scripted_safety',
+    language: 'en-US',
+    caption: 'Ladies and gentlemen, please return to your seats and fasten your seatbelts. We are entering an area of turbulence.',
+    plain: 'Bumpy air ahead. Sit down and buckle up now.',
+    word_confidences: null,
+    asl_clip_id: 'asl_seatbelt_003',      // approved clip only
+    sign_available: true,
+    sign_reason: 'approved_scripted_clip',
+    action: 'seatbelt_on',
+    template_match: 'seatbelt_on',
+    model_version: 'rules-v1',
+    route_package_version: 'SEA-24A',
+    fallback_reason: 'none',
+    latency: 88
+  },
+
+  severe_turbulence: {
+    id: 'severe_turbulence',
+    urgency: 'SAFETY',
+    severity: 'high',
+    confidence_level: 'high',
+    confidence: 0.99,
+    source: 'template_snap',
+    event_kind: 'scripted_safety',
+    language: 'en-US',
+    caption: 'Attention all passengers. We are entering severe turbulence. Please remain seated with your seatbelt securely fastened. Crew, please be seated immediately.',
+    plain: 'Severe bumps — stay seated, belt fastened tight.',
+    word_confidences: null,
+    asl_clip_id: 'asl_turbulence_001',
+    sign_available: true,
+    sign_reason: 'approved_scripted_clip',
+    action: 'turbulence',
+    template_match: 'severe_turbulence',
+    model_version: 'rules-v1',
+    route_package_version: 'SEA-24A',
+    fallback_reason: 'none',
+    latency: 62
+  },
+
+  brace: {
+    id: 'brace',
+    urgency: 'SAFETY',
+    severity: 'critical',
+    confidence_level: 'high',
+    confidence: 1.0,
+    source: 'template_snap',
+    event_kind: 'scripted_emergency',
+    language: 'en-US',
+    caption: 'EMERGENCY BRACE — adopt brace position now. Head down, hands behind head. Brace, brace, brace.',
+    plain: 'Emergency landing. Bend forward, hands on head. Do it now.',
+    word_confidences: null,
+    asl_clip_id: 'asl_brace_001',
+    sign_available: true,
+    sign_reason: 'approved_emergency_clip',
+    action: 'brace',
+    template_match: 'emergency_brace',
+    model_version: 'rules-v1',
+    route_package_version: 'SEA-24A',
+    fallback_reason: 'none',
+    latency: 24
+  },
+
+  meal: {
+    id: 'meal',
+    urgency: 'ROUTINE',
+    severity: null,
+    confidence_level: 'high',
+    confidence: 0.97,
+    source: 'asr',
+    event_kind: 'live_pa_asr',
+    language: 'en-US',
+    caption: 'Cabin crew, please begin the meal service for the main cabin. We will start from the front of the aircraft.',
+    plain: 'Food and drinks are coming soon.',
+    word_confidences: null,
+    asl_clip_id: null,
+    sign_available: false,
+    sign_reason: 'no_approved_clip_for_live_asr',
+    action: null,
+    template_match: 'meal_service_start',
+    model_version: 'asr-v1.3',
+    route_package_version: 'SEA-24A',
+    fallback_reason: 'live_asr_no_sign_asset',
+    latency: 142
+  },
+
+  landing: {
+    id: 'landing',
+    urgency: 'SAFETY',
+    severity: 'moderate',
+    confidence_level: 'high',
+    confidence: 0.96,
+    source: 'asr',
+    event_kind: 'live_pa_asr',
+    language: 'en-US',
+    caption: 'Ladies and gentlemen, we have begun our initial descent into Seattle. Please stow your tray tables and return your seats to the upright position.',
+    plain: 'We are landing soon. Pack up and buckle in.',
+    word_confidences: null,
+    asl_clip_id: null,
+    sign_available: false,
+    sign_reason: 'no_approved_clip_for_live_asr',
+    action: 'seatbelt_on',
+    template_match: 'initial_descent',
+    model_version: 'asr-v1.3',
+    route_package_version: 'SEA-24A',
+    fallback_reason: 'live_asr_no_sign_asset',
+    latency: 168
+  },
+
+  low_conf_routine: {
+    id: 'low_conf_routine',
+    urgency: 'ROUTINE',
+    severity: null,
+    confidence_level: 'low',
+    confidence: 0.49,
+    source: 'aces_pram',
+    event_kind: 'deterministic_ops_message',
+    language: 'en-US',
+    caption: 'We will be serving [unclear] shortly and the cabin crew will [unclear] any questions you may have about [unclear].',
+    plain: 'Service coming — some words unclear due to audio quality.',
+    word_confidences: [0.92, 0.9, 0.88, 0.3, 0.85, 0.82, 0.9, 0.75, 0.3, 0.7, 0.65, 0.88, 0.6, 0.55, 0.3, 0.45, 0.4],
+    asl_clip_id: null,
+    sign_available: false,
+    sign_reason: 'no_sign_needed_for_pram',
+    action: null,
+    template_match: null,
+    model_version: 'pram-v2.0',
+    route_package_version: 'SEA-24A',
+    fallback_reason: 'confidence_low_pram_deterministic',
+    latency: 312
+  },
+
+  low_conf_safety: {
+    id: 'low_conf_safety',
+    urgency: 'SAFETY',
+    severity: 'moderate',
+    confidence_level: 'low',
+    confidence: 0.41,
+    source: 'asr',
+    event_kind: 'live_pa_asr',
+    language: 'en-US',
+    caption: 'Please [unclear] your seatbelts and remain [unclear] — the crew will [unclear] your area shortly.',
+    plain: 'Safety alert — some words unclear. Fasten your seatbelt now.',
+    word_confidences: [0.85, 0.25, 0.2, 0.82, 0.88, 0.9, 0.3, 0.2, 0.85, 0.8, 0.3, 0.2, 0.45, 0.82, 0.7],
+    asl_clip_id: 'asl_seatbelt_003',
+    sign_available: true,
+    sign_reason: 'approved_scripted_clip',
+    action: 'seatbelt_on',
+    template_match: null,
+    model_version: 'asr-v1.3',
+    route_package_version: 'SEA-24A',
+    fallback_reason: 'low_confidence_live_asr',
+    latency: 395
+  },
+
+  feed_lost: {
+    id: 'feed_lost',
+    urgency: 'OPERATIONAL',
+    status: 'audio_feed_disconnected',
+    source: 'system',
+    event_kind: 'system_status',
+    language: 'en-US',
+    caption: null,
+    plain: null,
+    word_confidences: null,
+    asl_clip_id: null,
+    sign_available: false,
+    sign_reason: 'n_a',
+    action: null,
+    template_match: null,
+    model_version: 'transport-v1',
+    route_package_version: 'SEA-24A',
+    fallback_reason: 'audio_feed_disconnected',
+    latency: 0
+  },
+
+  reconnect: {
+    id: 'reconnect',
+    urgency: 'OPERATIONAL',
+    status: 'ws_reconnecting',
+    source: 'system',
+    event_kind: 'system_status',
+    language: 'en-US',
+    caption: null,
+    plain: null,
+    word_confidences: null,
+    asl_clip_id: null,
+    sign_available: false,
+    sign_reason: 'n_a',
+    action: null,
+    template_match: null,
+    model_version: 'transport-v1',
+    route_package_version: 'SEA-24A',
+    fallback_reason: 'ws_reconnecting',
+    latency: 0
+  }
 };
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
@@ -166,18 +288,26 @@ const app = {
     ],
 
     settings: {
-        asl: true,
+        signLanguage: 'none',   // none | asl | bsl
+        captionLanguage: 'en',   // en | es | zh
         haptic: true,
         contrast: false,
         textSize: 18,
-        language: 'en',
-        largeDisplay: false
+        largeDisplay: false,
+
+        loadedAssets: {
+            captions: ['en', 'es', 'zh'],
+            sign: ['asl', 'bsl'],
+            offlineReady: true
+        }
     },
 
     init() {
-        // Read preferences from the onboarding screen (opening.html)
-        if (localStorage.getItem('cc_language')) this.settings.language = localStorage.getItem('cc_language');
-        if (localStorage.getItem('cc_asl')) this.settings.asl = localStorage.getItem('cc_asl') === 'true';
+        const captionLang = localStorage.getItem('cc_caption_language') || localStorage.getItem('cc_language');
+        const signLang = localStorage.getItem('cc_sign_language') || (localStorage.getItem('cc_asl') === 'true' ? 'asl' : 'none');
+
+        if (captionLang) this.settings.captionLanguage = captionLang;
+        if (signLang) this.settings.signLanguage = signLang;
         
         this.ws = new CabinWebSocket();
         this.setupWSListeners();
@@ -313,13 +443,20 @@ const app = {
             const wc = evt.word_confidences;
 
             if (wc && wc.length > 0) {
+                const avg = wc.reduce((a,b) => a+b, 0) / wc.length;
+                const lowCount = wc.filter(c => c < 0.6).length;
+
+                if (avg < 0.45 || lowCount / wc.length > 0.5) {
+                    // If overall confidence is very low, show a generic message instead of misleading word-level cues
+                    textEl.textContent = 'Caption uncertain. Some or all words may be incorrect.';
+                } else {
                 textEl.innerHTML = words.map((word, i) => {
                     const conf = wc[i] !== undefined ? wc[i] : 1.0;
                     let cls = 'conf-high';
                     if (conf < 0.6) cls = 'conf-low';
                     else if (conf < 0.85) cls = 'conf-medium';
                     return `<span class="word ${cls}">${word} </span>`;
-                }).join('');
+                }).join('');}
             } else {
                 textEl.textContent = evt.caption;
             }
@@ -363,7 +500,6 @@ const app = {
         }
     },
 
-    // ─── Safety Mode ───────────────────────────────────────────────────────
     // ─── Safety Mode ───────────────────────────────────────────────────────
     setSafetyMode(evt) {
         this.safetyActive = true;
@@ -419,44 +555,38 @@ const app = {
         const overlay = document.getElementById('asl-overlay');
         const video = document.getElementById('asl-video');
         const fallbackText = document.getElementById('asl-fallback-text');
-        if (!overlay || !video) return;
+        const clipLabel = document.getElementById('asl-clip-id');
+        if (!overlay || !video || !fallbackText) return;
 
-        // NEW LOGIC: If the user enabled ASL on the portal, ALWAYS show the overlay during an announcement.
-        if (this.settings.asl) {
-            overlay.classList.add('active');
-            
-            // If the backend sent a specific clip (like "brace_001"), use it. 
-            // Otherwise, use a default "generic_update" clip ID for routine announcements.
-            const clipId = evt.asl_clip_id ? evt.asl_clip_id : 'generic_update';
-            
-            const aslClipLabel = document.getElementById('asl-clip-id');
-            if (aslClipLabel) aslClipLabel.textContent = clipId;
-
-            // Attempt to play the video. 
-            video.src = `assets/asl/${clipId}.mp4`; 
-            
-            // Hackathon trick: If the video file doesn't actually exist in your folder, 
-            // the video player will fail to load. We catch that error and show the fallback text instead!
-            video.play().catch(() => {
-                video.style.display = 'none';
-                fallbackText.style.display = 'block';
-            });
-
-            // Automatically hide the ASL overlay after 6 seconds
-            clearTimeout(this._aslTimer);
-            this._aslTimer = setTimeout(() => {
-                overlay.classList.remove('active');
-                video.style.display = 'block';
-                fallbackText.style.display = 'none';
-            }, 6000);
-            
-        } else {
-            // If user turned ASL OFF in the portal, ensure it stays hidden
+        if (this.settings.signLanguage === 'none') {
             overlay.classList.remove('active');
             video.removeAttribute('src');
             video.load();
+            return;
         }
+
+        if (!evt.asl_clip_id) {
+            overlay.classList.add('active');
+            video.style.display = 'none';
+            fallbackText.style.display = 'block';
+            fallbackText.textContent = 'No approved sign-language clip for this announcement';
+            if (clipLabel) clipLabel.textContent = 'none';
+            return;
+        }
+
+        overlay.classList.add('active');
+        video.style.display = 'block';
+        fallbackText.style.display = 'none';
+        if (clipLabel) clipLabel.textContent = evt.asl_clip_id;
+
+        video.src = `assets/asl/${evt.asl_clip_id}.mp4`;
+        video.play().catch(() => {
+            video.style.display = 'none';
+            fallbackText.style.display = 'block';
+            fallbackText.textContent = 'Approved sign clip could not be played';
+        });
     },
+
     // ─── Haptic Patterns (from spec) ──────────────────────────────────────
     triggerHapticForEvent(evt) {
         if (!this.settings.haptic) return;
@@ -555,26 +685,42 @@ const app = {
 
     // ─── Settings ─────────────────────────────────────────────────────────
     applySettings() {
-        document.getElementById('text-size-preview')?.style.setProperty(
-            'font-size',
-            this.settings.textSize + 'px'
-        );
+      document.documentElement.lang = this.settings.captionLanguage;
 
-        const textSizeVal = document.getElementById('text-size-val');
-        if (textSizeVal) textSizeVal.textContent = this.settings.textSize + 'px';
+      const routeSub = document.querySelector('.route-sub');
+      if (routeSub) {
+        routeSub.textContent = `Seat 12C · ${this.settings.captionLanguage.toUpperCase()}${this.settings.signLanguage !== 'none' ? ` · ${this.settings.signLanguage.toUpperCase()}` : ''}`;
+      }
 
-        const sizeSlider = document.getElementById('text-size-slider');
-        if (sizeSlider) sizeSlider.value = this.settings.textSize;
-
-        document.documentElement.classList.toggle('high-contrast', this.settings.contrast);
-        document.documentElement.classList.toggle('large-display', this.settings.largeDisplay);
-        document.documentElement.lang = this.settings.language || 'en';
-
-        const routeSub = document.querySelector('.route-sub');
-        if (routeSub) {
-            routeSub.textContent = `Seat 12C · ${this.settings.language.toUpperCase()}${this.settings.asl ? ', ASL' : ''}`;
-        }
+      this.renderFlightAssets?.(); 
     },
+
+    renderFlightAssets() {
+        const routeCard = document.querySelector('.route-bar');
+        if (!routeCard) return;
+
+        let el = document.getElementById('flight-assets-status');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'flight-assets-status';
+            el.className = 'text-small text-muted mt-sm';
+            routeCard.insertAdjacentElement('afterend', el);
+        }
+
+        const captions = (this.settings.loadedAssets?.captions?.length
+            ? this.settings.loadedAssets.captions
+            : [this.settings.captionLanguage]
+        ).map(lang => CAPTION_LABELS[lang] || lang);
+
+        const sign = this.settings.signLanguage === 'none'
+            ? 'none'
+            : `${SIGN_LABELS[this.settings.signLanguage] || this.settings.signLanguage} available`;
+
+        el.textContent =
+            `Loaded for this flight: ${captions.join(', ')} captions. ` +
+            `Sign assets: ${sign}. Offline-ready.`;
+    },
+
 
     toggleSetting(settingName, value) {
         this.settings[settingName] = value;
@@ -663,6 +809,10 @@ const app = {
     triggerEmergency() {
         const overlay = document.getElementById('emergency-overlay');
         if(overlay) overlay.classList.remove('hidden');
+
+        // Send to dashboard too
+        this.ws.dispatch(SCENARIOS.brace);
+
         this.triggerHaptic([100,50,100,50,100,50,100]);
     },
 

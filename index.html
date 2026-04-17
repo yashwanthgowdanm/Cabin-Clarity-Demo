@@ -41,7 +41,7 @@
                 <div class="route-bar">
                     <div>
                         <div class="route-flight">✈ AA120 · PHX → SEA</div>
-                        <div class="route-sub">Seat 12C · English, ASL</div>
+                        <div class="route-sub">Seat 12C</div>
                     </div>
                     <div class="ws-dot-wrap">
                         <div class="ws-dot connecting" id="ws-indicator-dot"></div>
@@ -200,38 +200,55 @@
                     </div>
 
                     <!-- Accessibility Toggles -->
+                    <!-- Accessibility -->
                     <div class="card">
-                        <h2 class="section-title">Accessibility</h2>
-                        <div class="setting-row">
-                            <div>
-                                <span class="font-bold text-small">ASL Video Overlay</span>
-                                <div class="text-small text-muted">Show sign language clips</div>
-                            </div>
-                            <label class="switch">
-                                <input type="checkbox" checked onchange="app.toggleSetting('asl', this.checked)">
-                                <span class="slider"></span>
-                            </label>
+                      <h2 class="section-title">Accessibility</h2>
+
+                      <div class="setting-row">
+                        <div>
+                          <span class="font-bold text-small">Sign-language overlay</span>
+                          <div class="text-small text-muted">Show approved clips only</div>
                         </div>
-                        <div class="setting-row">
-                            <div>
-                                <span class="font-bold text-small">Haptic Feedback</span>
-                                <div class="text-small text-muted">Vibration for safety alerts</div>
-                            </div>
-                            <label class="switch">
-                                <input type="checkbox" checked onchange="app.toggleSetting('haptic', this.checked)">
-                                <span class="slider"></span>
-                            </label>
+                        <select class="select-clean text-small" onchange="app.toggleSetting('signLanguage', this.value)">
+                          <option value="none">None</option>
+                          <option value="asl">ASL</option>
+                          <option value="bsl">BSL</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-row">
+                      <div>
+                        <span class="font-bold text-small">Caption language</span>
+                        <div class="text-small text-muted">Primary caption language</div>
+                      </div>
+                      <select class="select-clean text-small" onchange="app.toggleSetting('captionLanguage', this.value)">
+                        <option value="en">English</option>
+                        <option value="es">Español</option>
+                        <option value="zh">中文</option>
+                      </select>
+                    </div>
+
+                    <div class="setting-row">
+                        <div>
+                        <span class="font-bold text-small">Haptic Feedback</span>
+                        <div class="text-small text-muted">Vibration for safety alerts</div>
                         </div>
-                        <div class="setting-row border-none">
-                            <div>
-                                <span class="font-bold text-small">High Contrast Mode</span>
-                                <div class="text-small text-muted">Black/white/amber only</div>
-                            </div>
-                            <label class="switch">
-                                <input type="checkbox" onchange="app.toggleSetting('contrast', this.checked)">
-                                <span class="slider"></span>
-                            </label>
+                        <label class="switch">
+                        <input type="checkbox" checked onchange="app.toggleSetting('haptic', this.checked)">
+                        <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-row border-none">
+                        <div>
+                        <span class="font-bold text-small">High Contrast Mode</span>
+                        <div class="text-small text-muted">Black/white/amber only</div>
                         </div>
+                        <label class="switch">
+                        <input type="checkbox" onchange="app.toggleSetting('contrast', this.checked)">
+                        <span class="slider"></span>
+                        </label>
+                    </div>
                     </div>
 
                     <!-- Notifications -->
@@ -245,34 +262,6 @@
                         <div class="setting-row border-none">
                             <span class="text-small">Descent Notification</span>
                             <label class="switch"><input type="checkbox" checked onchange="app.toggleSetting('descentWakeup', this.checked)"><span class="slider"></span></label>
-                        </div>
-                    </div>
-
-                    <!-- Language -->
-                    <div class="card">
-                        <h2 class="section-title">Language</h2>
-                        <div class="setting-row border-none">
-                            <span class="text-small font-bold">Caption Language</span>
-                            <select class="select-clean text-small" onchange="app.toggleSetting('language', this.value)">
-                                <option value="en">English</option>
-                                <option value="es">Español</option>
-                                <option value="fr">Français</option>
-                                <option value="ja">日本語</option>
-                                <option value="de">Deutsch</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Companion Link -->
-                    <div class="card">
-                        <h2 class="section-title">Companion Link</h2>
-                        <div style="background:var(--badge-bg);padding:10px;border-radius:12px;margin-bottom:10px">
-                            <strong class="text-blue text-small">Linked: Jane Doe</strong><br>
-                            <span class="text-small text-muted">Seat 12B</span>
-                        </div>
-                        <div class="setting-row border-none">
-                            <span class="font-bold text-small">Share Requests with Companion</span>
-                            <label class="switch"><input type="checkbox" checked onchange="app.toggleSetting('companionAlerts', this.checked)"><span class="slider"></span></label>
                         </div>
                     </div>
 
@@ -318,8 +307,6 @@
     </div><!-- /device-screen -->
 </div><!-- /device-frame -->
 
-<script src="transport.js"></script>
-
 <div id="asl-overlay" class="asl-container">
         <div class="asl-badge">ASL <span id="asl-clip-id"></span></div>
         <video id="asl-video" muted playsinline loop style="background: #1e293b;"></video>
@@ -331,35 +318,39 @@
 <script src="app.js"></script>
 
 <!-- PC Pilot Simulator Panel -->
-<div class="sim-control-panel">
-    <h3>🛩 Pilot Simulator</h3>
+<div class="dev-panel-wrap"> 
+    <div class="dev-panel-handle">Dev</div>
+    <div class="sim-control-panel">
+        <h3>🛩 Pilot Simulator</h3>
 
-    <div class="sim-section-label">Routine</div>
-    <button class="sim-btn" onclick="app.simulatePilot('meal')">🍴 Meal Service</button>
-    <button class="sim-btn" onclick="app.simulatePilot('landing')">🛬 Initial Descent</button>
-    <button class="sim-btn" onclick="app.simulatePilot('low_conf_routine')">◐ Low Conf (Routine)</button>
+        <div class="sim-section-label">Routine</div>
+        <button class="sim-btn" onclick="app.simulatePilot('meal')">🍴 Meal Service</button>
+        <button class="sim-btn" onclick="app.simulatePilot('landing')">🛬 Initial Descent</button>
+        <button class="sim-btn" onclick="app.simulatePilot('low_conf_routine')">◐ Low Conf (Routine)</button>
 
-    <div class="sim-section-label">Safety</div>
-    <button class="sim-btn danger" onclick="app.simulatePilot('turbulence')">⚠ Turbulence (moderate)</button>
-    <button class="sim-btn danger" onclick="app.simulatePilot('severe_turbulence')">⚠⚠ Turbulence (high)</button>
-    <button class="sim-btn danger" onclick="app.simulatePilot('low_conf_safety')">◐⚠ Low Conf (Safety)</button>
-    <button class="sim-btn emergency" onclick="app.triggerEmergency()">🚨 BRACE BRACE BRACE</button>
+        <div class="sim-section-label">Safety</div>
+        <button class="sim-btn danger" onclick="app.simulatePilot('turbulence')">⚠ Turbulence (moderate)</button>
+        <button class="sim-btn danger" onclick="app.simulatePilot('severe_turbulence')">⚠⚠ Turbulence (high)</button>
+        <button class="sim-btn danger" onclick="app.simulatePilot('low_conf_safety')">◐⚠ Low Conf (Safety)</button>
+        <button class="sim-btn emergency" onclick="app.triggerEmergency()">🚨 BRACE BRACE BRACE</button>
 
-    <div class="sim-section-label">Connection</div>
-    <button class="sim-btn" onclick="app.simulatePilot('feed_lost')">📵 Feed Lost</button>
-    <button class="sim-btn" onclick="app.simulatePilot('reconnect')">🔄 Drop + Reconnect</button>
+        <div class="sim-section-label">Connection</div>
+        <button class="sim-btn" onclick="app.simulatePilot('feed_lost')">📵 Feed Lost</button>
+        <button class="sim-btn" onclick="app.simulatePilot('reconnect')">🔄 Drop + Reconnect</button>
 
-    <hr>
-    <a class="dash-link" onclick="app.openDashboard()" href="#">📊 Open Dashboard</a>
-    <hr>
-    <p><small>
-        <b>T</b> Turbulence · <b>S</b> Severe<br>
-        <b>B</b> Brace · <b>M</b> Meal<br>
-        <b>L</b> Landing · <b>C</b> Low Conf<br>
-        <b>F</b> Feed Lost · <b>R</b> Reconnect<br>
-        <b>E</b> Emergency
-    </small></p>
+        <hr>
+        <a class="dash-link" onclick="app.openDashboard()" href="#">📊 Open Dashboard</a>
+        <hr>
+        <p><small>
+            <b>T</b> Turbulence · <b>S</b> Severe<br>
+            <b>B</b> Brace · <b>M</b> Meal<br>
+            <b>L</b> Landing · <b>C</b> Low Conf<br>
+            <b>F</b> Feed Lost · <b>R</b> Reconnect<br>
+            <b>E</b> Emergency
+        </small></p>
+    </div>
 </div>
+
 <script>
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {

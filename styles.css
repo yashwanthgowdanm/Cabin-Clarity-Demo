@@ -423,6 +423,13 @@ body {
   text-decoration-style: dotted;
   text-underline-offset: 2px;
 }
+.low-conf-bar {
+    display: none;
+}
+
+.low-conf-bar.visible {
+    display: block;
+}
 
 .safety-action-wrap {
   display: none;
@@ -1068,4 +1075,38 @@ html[data-theme="dark"][data-safety="true"] #live-caption,
 html[data-theme="dark"][data-safety="true"] #live-caption span,
 html[data-theme="dark"][data-safety="true"] #summary-text {
   color: #ff8a8a !important;
+}
+
+.dev-panel-wrap {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 9999;
+}
+
+.sim-control-panel {
+  opacity: 0;
+  transform: translateX(16px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.dev-panel-wrap:hover .sim-control-panel,
+.dev-panel-wrap:focus-within .sim-control-panel {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.dev-panel-handle {
+  position: absolute;
+  right: 0;
+  top: -28px;
+  background: #1f2232;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 8px 8px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
 }
