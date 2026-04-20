@@ -149,7 +149,7 @@ const SCENARIOS = {
     plain: 'We are landing soon. Pack up and buckle in.',
     word_confidences: null,
     asl_clip_id: null,
-    sign_available: false,
+    sign_available: true,
     sign_reason: 'no_approved_clip_for_live_asr',
     action: 'seatbelt_on',
     template_match: 'initial_descent',
@@ -573,7 +573,11 @@ const app = {
 
         const chosenLang = this.settings.signLanguage; // none | asl | bsl
         const signLang = evt.sign_language || chosenLang;
-        const clipId = evt.sign_clip_id || evt.asl_clip_id || null;
+        let clipId = evt.sign_clip_id || evt.asl_clip_id || null;
+
+        if (clipId && signLang === 'bsl') {
+            clipId = clipId.replace(/^asl_/, 'bsl_');
+        }
         const approved = !!evt.sign_available && !!clipId;
 
         if (signLang === 'none' || !approved) {
