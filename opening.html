@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cabin Clarity | Wi-Fi Portal</title>
+  <title>Cabin Clarity </title>
   <link rel="stylesheet" href="styles.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
   <style>
     :root {
-      --portal-bg: #08111f;
-      --portal-surface: rgba(10, 18, 32, 0.94);
-      --portal-text: #f8fafc;
+      --portal-bg: #ffffff;
+      --portal-surface: rgba(33, 58, 102, 0.94);
+      --portal-text: #000000;
       --portal-muted: #94a3b8;
       --portal-line: rgba(255, 255, 255, 0.10);
       --portal-navy: #0f4a8a;
@@ -386,9 +386,7 @@
         <div class="portal-header">
           <div class="brand-lockup">
             <div class="brand-mark"><span class="line"></span><span>Cabin Clarity</span></div>
-            <div class="brand-subtitle">Onboard Wi‑Fi portal</div>
           </div>
-          <div class="portal-status"><span class="portal-status-dot"></span><span>Secure cabin network</span></div>
         </div>
 
         <main class="portal-main portal-bg">
@@ -402,12 +400,10 @@
 
               <div class="flight-card">
                 <div>
-                  <div class="route">PHX → LHR</div>
-                  <div class="meta" style="margin-top:10px;">English · ASL available<br />Flight network ready on board</div>
+                  <div class="route">Flight Ready</div>
+                  <div class="seal">● Cabin service active</div>
                 </div>
-                <div class="seal">● Service active</div>
               </div>
-            </div>
 
             <div style="margin-top:16px;">
               <button class="btn-portal" onclick="nextStep()">Continue to Cabin Clarity</button>
@@ -430,16 +426,6 @@
                 <option value="zh">中文 (Mandarin)</option>
               </select>
             </div>
-
-            <div class="form-group">
-              <label for="sign-lang-select">Sign-language overlay</label>
-              <select id="sign-lang-select">
-                <option value="none">None</option>
-                <option value="asl">ASL</option>
-                <option value="bsl">BSL</option>
-              </select>
-            </div>
-
             <button class="btn-portal" onclick="startApp()" id="btn-start" style="margin-top: 12px;">Enter Cabin Clarity</button>
             <div class="footer-note">Your preferences save automatically for this session.</div>
           </div>
@@ -467,37 +453,30 @@
   }
 
   function startApp() {
-    const btn = document.getElementById('btn-start');
-    const langSelect = document.getElementById('lang-select');
-    const signSelect = document.getElementById('sign-lang-select');
+  const btn = document.getElementById('btn-start');
+  const langSelect = document.getElementById('lang-select');
 
-    if (!btn || !langSelect || !signSelect) {
-      console.error('Missing onboarding elements');
-      return;
-    }
-
-    const captionLanguage = langSelect.value;
-    const signLanguage = signSelect.value;
-    const captionText = langSelect.options[langSelect.selectedIndex].text.split(' ')[0];
-
-    // New keys
-    localStorage.setItem('cc_caption_language', captionLanguage);
-    localStorage.setItem('cc_sign_language', signLanguage);
-
-    // Legacy keys so your current app still works
-    localStorage.setItem('cc_language', captionLanguage);
-    localStorage.setItem('cc_asl', String(signLanguage !== 'none'));
-
-    btn.disabled = true;
-    btn.innerText = `Loading ${captionText}...`;
-
-    setTimeout(() => {
-      btn.innerText = 'Connecting...';
-      setTimeout(() => {
-        window.location.href = 'index.html';
-      }, 550);
-    }, 900);
+  if (!btn || !langSelect) {
+    console.error('Missing onboarding elements');
+    return;
   }
+
+  const captionLanguage = langSelect.value;
+  const captionText = langSelect.options[langSelect.selectedIndex].text.split(' ')[0];
+
+  localStorage.setItem('cc_caption_language', captionLanguage);
+  localStorage.setItem('cc_language', captionLanguage);
+
+  btn.disabled = true;
+  btn.innerText = `Loading ${captionText}...`;
+
+  setTimeout(() => {
+    btn.innerText = 'Connecting...';
+    setTimeout(() => {
+      window.location.href = 'index.html';
+    }, 550);
+  }, 900);
+}
 </script>
 </body>
 </html>

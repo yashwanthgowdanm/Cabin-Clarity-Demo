@@ -41,7 +41,6 @@
                 <div class="route-bar">
                     <div>
                         <div class="route-flight">✈ AA120 · PHX → SEA</div>
-                        <div class="route-sub">Seat 12C</div>
                     </div>
                     <div class="ws-dot-wrap">
                         <div class="ws-dot connecting" id="ws-indicator-dot"></div>
@@ -91,15 +90,6 @@
                             <!-- Live caption text with per-word confidence support -->
                             <p class="live-caption-text" id="live-caption-text"></p>
                             
-
-                            <!-- ASL overlay: 30% width, bottom-right, overlays caption -->
-                            <div id="asl-overlay">
-                                <video id="asl-video" muted playsinline autoplay></video>
-                                <div class="asl-inner">
-                                    ▶ ASL<br><span id="asl-clip-id" style="font-size:0.55rem;opacity:0.6"></span>
-                                </div>
-                            </div>
-
                             <!-- Low confidence indicator -->
                             <div class="low-conf-bar" id="low-conf-bar">
                                 ◐ Low confidence · uncertain words are faded
@@ -118,6 +108,22 @@
                             <button id="confirm-receipt-btn" class="btn btn-primary full-width mt-1" onclick="app.confirmReceipt()">
                                 ✓ Acknowledge
                             </button>
+                        </div>
+
+                        <div class="card sign-card hidden" id="sign-card">
+                            <div class="flex-between border-bottom pb-1 mb-1">
+                                <h2 class="section-title border-none mb-0 pb-0" id="sign-card-title">Sign Language</h2>
+                                <span class="text-small text-muted" id="sign-card-lang">—</span>
+                            </div>
+
+                            <div class="sign-media-frame">
+                                <video id="sign-video" muted playsinline autoplay></video>
+                                <div id="sign-fallback-text" class="text-small text-muted" style="display:none; text-align:center; padding:16px;">
+                                    Approved sign clip not available
+                                </div>
+                            </div>
+
+                            <div class="text-small text-muted mt-sm" id="sign-meta"></div>
                         </div>
 
                         <!-- STATE: captions unavailable -->
@@ -139,7 +145,22 @@
 
                     </div><!-- /caption-card -->
 
-                    <!-- History Card -->
+                    <!-- Flight Info Card -->
+                    <div class="card">
+                        <h2 class="section-title">Flight AA120</h2>
+                        <div class="seatbelt-card mb-2" id="seatbelt-status-card">
+                            <span style="font-size:1.8rem; filter: grayscale(1); opacity: 0.6;">💺</span>
+                            <div>
+                                <div class="font-bold text-dark">Seatbelt OFF</div>
+                                <div class="text-small text-muted">Cruising Conditions</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-history" class="view">
+                <div class="dashboard-grid">
                     <div class="card">
                         <div class="flex-between border-bottom pb-1 mb-1">
                             <h2 class="section-title border-none mb-0 pb-0">History</h2>
@@ -151,30 +172,9 @@
                         </div>
                         <div id="history-log" class="history-scroll"></div>
                     </div>
-
-                    <!-- Flight Info Card -->
-                    <div class="card">
-                        <h2 class="section-title">Flight AA120</h2>
-                        <div class="seatbelt-card mb-2" id="seatbelt-status-card">
-                            <span style="font-size:1.8rem; filter: grayscale(1); opacity: 0.6;">💺</span>
-                            <div>
-                                <div class="font-bold text-dark">Seatbelt OFF</div>
-                                <div class="text-small text-muted">Cruising Conditions</div>
-                            </div>
-                        </div>
-                        <h2 class="section-title mt-2">Connecting: SEA</h2>
-                        <p class="text-small text-muted mb-1">Gate A14 · Departs 16:30</p>
-                        <div class="progress-tracker">
-                            <div class="progress-step completed">Arrive</div>
-                            <div class="progress-line completed"></div>
-                            <div class="progress-step active">Pre-Board</div>
-                            <div class="progress-line"></div>
-                            <div class="progress-step">Grp 4</div>
-                        </div>
-                    </div>
                 </div>
             </section>
-
+            
             <!-- ── VIEW 5: SETTINGS ────────────────────────────────────────── -->
             <section id="view-settings" class="view">
                 <div class="header-section">
@@ -206,7 +206,7 @@
 
                       <div class="setting-row">
                         <div>
-                          <span class="font-bold text-small">Sign-language overlay</span>
+                          <span class="font-bold text-small">Sign Language</span>
                           <div class="text-small text-muted">Show approved clips only</div>
                         </div>
                         <select class="select-clean text-small" onchange="app.toggleSetting('signLanguage', this.value)">
@@ -289,16 +289,23 @@
 
         <!-- Bottom Tab Bar -->
         <nav class="bottom-tab-bar">
-            <a href="#" class="tab-item active" data-target="view-flight">
-                <div class="tab-icon-wrap">
-                    <div class="tab-icon">✈️</div>
-                    <span class="tab-badge hidden" id="badge-flight"></span>
-                </div>
-                <span>Status</span>
-            </a>
-            <a href="#" class="tab-item" data-target="view-settings">
-                <div class="tab-icon">⚙️</div><span>Settings</span>
-            </a>
+        <a href="#" class="tab-item active" data-target="view-flight">
+            <div class="tab-icon-wrap">
+            <div class="tab-icon">✈️</div>
+            <span class="tab-badge hidden" id="badge-flight"></span>
+            </div>
+            <span>Status</span>
+        </a>
+
+        <a href="#" class="tab-item" data-target="view-history">
+            <div class="tab-icon">🕘</div>
+            <span>History</span>
+        </a>
+
+        <a href="#" class="tab-item" data-target="view-settings">
+            <div class="tab-icon">⚙️</div>
+            <span>Settings</span>
+        </a>
         </nav>
 
         <div id="toast" class="toast hidden">Message sent</div>
@@ -307,57 +314,11 @@
     </div><!-- /device-screen -->
 </div><!-- /device-frame -->
 
-<div id="asl-overlay" class="asl-container">
-        <div class="asl-badge">ASL <span id="asl-clip-id"></span></div>
-        <video id="asl-video" muted playsinline loop style="background: #1e293b;"></video>
-        <div id="asl-fallback-text" style="color:white; padding: 40px 10px; text-align: center; font-size: 0.8rem; display:none;">
-            [ASL Interpreter]
-        </div>
-    </div>
+
 <script src="transport.js"></script>
 <script src="app.js"></script>
 
-<!-- PC Pilot Simulator Panel -->
-<div class="dev-panel-wrap"> 
-    <div class="dev-panel-handle">Dev</div>
-    <div class="sim-control-panel">
-        <h3>🛩 Pilot Simulator</h3>
 
-        <div class="sim-section-label">Routine</div>
-        <button class="sim-btn" onclick="app.simulatePilot('meal')">🍴 Meal Service</button>
-        <button class="sim-btn" onclick="app.simulatePilot('landing')">🛬 Initial Descent</button>
-        <button class="sim-btn" onclick="app.simulatePilot('low_conf_routine')">◐ Low Conf (Routine)</button>
-
-        <div class="sim-section-label">Safety</div>
-        <button class="sim-btn danger" onclick="app.simulatePilot('turbulence')">⚠ Turbulence (moderate)</button>
-        <button class="sim-btn danger" onclick="app.simulatePilot('severe_turbulence')">⚠⚠ Turbulence (high)</button>
-        <button class="sim-btn danger" onclick="app.simulatePilot('low_conf_safety')">◐⚠ Low Conf (Safety)</button>
-        <button class="sim-btn emergency" onclick="app.triggerEmergency()">🚨 BRACE BRACE BRACE</button>
-
-        <div class="sim-section-label">Connection</div>
-        <button class="sim-btn" onclick="app.simulatePilot('feed_lost')">📵 Feed Lost</button>
-        <button class="sim-btn" onclick="app.simulatePilot('reconnect')">🔄 Drop + Reconnect</button>
-
-        <hr>
-        <a class="dash-link" onclick="app.openDashboard()" href="#">📊 Open Dashboard</a>
-        <hr>
-        <p><small>
-            <b>T</b> Turbulence · <b>S</b> Severe<br>
-            <b>B</b> Brace · <b>M</b> Meal<br>
-            <b>L</b> Landing · <b>C</b> Low Conf<br>
-            <b>F</b> Feed Lost · <b>R</b> Reconnect<br>
-            <b>E</b> Emergency
-        </small></p>
-    </div>
-</div>
-
-<script>
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js');
-    });
-}
-</script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

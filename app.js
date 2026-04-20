@@ -5,7 +5,7 @@
  * Low Confidence (routine + safety), Captions Unavailable, Reconnecting
  * - Per-word confidence rendering (opacity + underline)
  * - All haptic patterns from spec
- * - ASL overlay (30% width, bottom-right, auto-fade)
+ * - Sign language card (ASL/BSL, separate block
  * - Safety action icons (SVG, 6 types)
  * - Safety mode: full UI transform, required acknowledgment
  * - History buffer (late-boarder replay on connect)
@@ -31,18 +31,6 @@ class CabinWebSocket {
         this.transport.dispatch(eventObj);
     }
 }
-
-    const CAPTION_LABELS = {
-        en: 'English',
-        es: 'Spanish',
-        zh: 'Mandarin'
-    };
-
-    const SIGN_LABELS = {
-        none: 'none',
-        asl: 'ASL',
-        bsl: 'BSL'
-    };
 
 // ─── SAFETY ACTION SVG ICONS ─────────────────────────────────────────────────
 const SAFETY_SVGS = {
@@ -157,7 +145,7 @@ const SCENARIOS = {
     source: 'asr',
     event_kind: 'live_pa_asr',
     language: 'en-US',
-    caption: 'Ladies and gentlemen, we have begun our initial descent into Seattle. Please stow your tray tables and return your seats to the upright position.',
+    caption: 'Ladies and gentlemen, we have begun our initial descent into London. Please stow your tray tables and return your seats to the upright position.',
     plain: 'We are landing soon. Pack up and buckle in.',
     word_confidences: null,
     asl_clip_id: null,
@@ -273,17 +261,26 @@ const app = {
         {
             time: '13:05', type: 'routine', urgency: 'ROUTINE',
             confidence_level: 'high', language: 'en-US',
-            text: 'Prepare for main cabin meal service.', asl_clip_id: null
+            text: 'Prepare for main cabin meal service.',
+            sign_clip_id: null,
+            sign_language: null,
+            sign_available: false
         },
         {
             time: '12:40', type: 'safety', urgency: 'SAFETY',
             confidence_level: 'high', language: 'en-US',
-            text: 'Seatbelt sign ON. Flight attendants please take your jumpseats.', asl_clip_id: 'asl_seatbelt_003'
+            text: 'Seatbelt sign ON. Flight attendants please take your jumpseats.',
+            sign_clip_id: 'asl_seatbelt_003',
+            sign_language: 'asl',
+            sign_available: true
         },
         {
             time: '12:15', type: 'routine', urgency: 'ROUTINE',
             confidence_level: 'high', language: 'en-US',
-            text: 'We have reached our cruising altitude of 35,000 feet.', asl_clip_id: null
+            text: 'We have reached our cruising altitude of 35,000 feet.',
+            sign_clip_id: null,
+            sign_language: null,
+            sign_available: false
         }
     ],
 
@@ -301,10 +298,18 @@ const app = {
             offlineReady: true
         }
     },
+    
+    requiresAcknowledgment(evt) {
+    return evt.urgency === 'SAFETY' &&
+        (
+        evt.severity === 'critical' ||
+        ['brace', 'evacuate', 'oxygen'].includes(evt.action)
+        );
+    },
 
     init() {
         const captionLang = localStorage.getItem('cc_caption_language') || localStorage.getItem('cc_language');
-        const signLang = localStorage.getItem('cc_sign_language') || (localStorage.getItem('cc_asl') === 'true' ? 'asl' : 'none');
+        const signLang = localStorage.getItem('cc_sign_language') || 'none';
 
         if (captionLang) this.settings.captionLanguage = captionLang;
         if (signLang) this.settings.signLanguage = signLang;
@@ -368,6 +373,7 @@ const app = {
 
     // ─── Announcement Handler ──────────────────────────────────────────────
     handleAnnouncement(evt) {
+        this.currentEvent = evt;
         const isSafety = evt.urgency === 'SAFETY';
         
         // Update caption card
@@ -381,8 +387,8 @@ const app = {
             this.clearSafetyMode();
         }
 
-        // ASL overlay
-        this.handleASL(evt);
+        // Sign language handling
+        this.handleSignLanguage(evt);
 
         // Haptic
         this.triggerHapticForEvent(evt);
@@ -485,12 +491,15 @@ const app = {
         if (summary && evt.plain) summary.textContent = evt.plain;
 
         // Ack button reset
+        const needsAck = this.requiresAcknowledgment(evt);
         const ackBtn = document.getElementById('confirm-receipt-btn');
+
         if (ackBtn) {
+            ackBtn.classList.toggle('hidden', !needsAck);
             ackBtn.textContent = '✓ Acknowledge';
             ackBtn.style.background = '';
             ackBtn.style.color = '';
-            this.acknowledged = false;
+            this.acknowledged = !needsAck;
         }
 
         // Source metadata
@@ -509,7 +518,9 @@ const app = {
 
         // Required ack: show banner
         const banner = document.getElementById('ack-required-banner');
-        if (banner) banner.style.display = 'flex';
+        if (banner) {
+        banner.style.display = this.requiresAcknowledgment(evt) ? 'flex' : 'none';
+        }
 
         // NEW: Update Flight Status Card to Seatbelt ON
         const seatbeltCard = document.getElementById('seatbelt-status-card');
@@ -549,44 +560,47 @@ const app = {
             `;
         }
     },
+    
+    handleSignLanguage(evt) {
+        const card = document.getElementById('sign-card');
+        const video = document.getElementById('sign-video');
+        const fallback = document.getElementById('sign-fallback-text');
+        const title = document.getElementById('sign-card-title');
+        const langLabel = document.getElementById('sign-card-lang');
+        const meta = document.getElementById('sign-meta');
 
-    // ─── ASL Overlay ───────────────────────────────────────────────────────
-    handleASL(evt) {
-        const overlay = document.getElementById('asl-overlay');
-        const video = document.getElementById('asl-video');
-        const fallbackText = document.getElementById('asl-fallback-text');
-        const clipLabel = document.getElementById('asl-clip-id');
-        if (!overlay || !video || !fallbackText) return;
+        if (!card || !video || !fallback || !title || !langLabel || !meta) return;
 
-        if (this.settings.signLanguage === 'none') {
-            overlay.classList.remove('active');
+        const chosenLang = this.settings.signLanguage; // none | asl | bsl
+        const signLang = evt.sign_language || chosenLang;
+        const clipId = evt.sign_clip_id || evt.asl_clip_id || null;
+        const approved = !!evt.sign_available && !!clipId;
+
+        if (signLang === 'none' || !approved) {
+            card.classList.add('hidden');
             video.removeAttribute('src');
             video.load();
             return;
         }
 
-        if (!evt.asl_clip_id) {
-            overlay.classList.add('active');
-            video.style.display = 'none';
-            fallbackText.style.display = 'block';
-            fallbackText.textContent = 'No approved sign-language clip for this announcement';
-            if (clipLabel) clipLabel.textContent = 'none';
-            return;
-        }
+        card.classList.remove('hidden');
+        title.textContent = signLang === 'bsl' ? 'British Sign Language' : 'American Sign Language';
+        langLabel.textContent = signLang.toUpperCase();
+        meta.textContent = evt.template_match ? `Template: ${evt.template_match}` : '';
 
-        overlay.classList.add('active');
+        fallback.style.display = 'none';
         video.style.display = 'block';
-        fallbackText.style.display = 'none';
-        if (clipLabel) clipLabel.textContent = evt.asl_clip_id;
 
-        video.src = `assets/asl/${evt.asl_clip_id}.mp4`;
+        const clipPath = `assets/sign/${signLang}/${clipId}.mp4`;
+        video.src = clipPath;
+
         video.play().catch(() => {
             video.style.display = 'none';
-            fallbackText.style.display = 'block';
-            fallbackText.textContent = 'Approved sign clip could not be played';
+            fallback.style.display = 'block';
+            fallback.textContent = 'Approved sign clip could not be played';
         });
-    },
-
+   },
+    
     // ─── Haptic Patterns (from spec) ──────────────────────────────────────
     triggerHapticForEvent(evt) {
         if (!this.settings.haptic) return;
@@ -621,7 +635,11 @@ const app = {
             confidence_level: evt.confidence_level,
             language: evt.language,
             text: evt.caption || evt.text || '',
-            asl_clip_id: evt.asl_clip_id || null
+            sign_clip_id: evt.sign_clip_id || evt.asl_clip_id || null,
+            sign_language: evt.sign_language || this.settings.signLanguage || null,
+            sign_available: evt.sign_available ?? !!(evt.sign_clip_id || evt.asl_clip_id),
+            template_match: evt.template_match || null,
+            fallback_reason: evt.fallback_reason || null
         });
 
         this.renderHistory();
@@ -656,7 +674,7 @@ const app = {
                     <div class="history-text">${item.text}</div>
                     <div class="history-conf">
                         ${item.confidence_level ? item.confidence_level + ' conf' : ''}
-                        ${item.asl_clip_id ? '· ASL ▶ (Tap to Expand & Replay)' : '· Tap to Expand'}
+                        ${item.sign_clip_id ? '· Sign ▶ (Tap to Expand & Replay)' : '· Tap to Expand'}
                     </div>
                 </div>
             `;
@@ -664,9 +682,14 @@ const app = {
             el.addEventListener('click', () => {
                 el.classList.toggle('expanded');
 
-                if (item.asl_clip_id && el.classList.contains('expanded')) {
-                    this.handleASL({ asl_clip_id: item.asl_clip_id });
-                    this.showToast('Replaying ASL Clip');
+                if ((item.sign_clip_id || item.asl_clip_id) && el.classList.contains('expanded')) {
+                    this.handleSignLanguage({
+                        sign_clip_id: item.sign_clip_id || item.asl_clip_id,
+                        sign_language: item.sign_language || this.settings.signLanguage,
+                        sign_available: item.sign_available ?? !!(item.sign_clip_id || item.asl_clip_id),
+                        template_match: item.template_match || null
+                    });
+                    this.showToast('Replaying sign clip');
                     this.triggerHaptic([50]);
                 }
             });
@@ -674,12 +697,11 @@ const app = {
             container.appendChild(el);
         });
     },
-
+    
     // Late boarder: send all previous history on connect
     replayHistoryForLateBoarder() {
         if (this.history.length > 0) {
             this.renderHistory();
-            this.showToast(`${this.history.length} previous announcements loaded`);
         }
     },
 
@@ -689,38 +711,9 @@ const app = {
 
       const routeSub = document.querySelector('.route-sub');
       if (routeSub) {
-        routeSub.textContent = `Seat 12C · ${this.settings.captionLanguage.toUpperCase()}${this.settings.signLanguage !== 'none' ? ` · ${this.settings.signLanguage.toUpperCase()}` : ''}`;
+        routeSub.textContent = `Seat 12C · ${this.settings.captionLanguage.toUpperCase()}`;
       }
-
-      this.renderFlightAssets?.(); 
     },
-
-    renderFlightAssets() {
-        const routeCard = document.querySelector('.route-bar');
-        if (!routeCard) return;
-
-        let el = document.getElementById('flight-assets-status');
-        if (!el) {
-            el = document.createElement('div');
-            el.id = 'flight-assets-status';
-            el.className = 'text-small text-muted mt-sm';
-            routeCard.insertAdjacentElement('afterend', el);
-        }
-
-        const captions = (this.settings.loadedAssets?.captions?.length
-            ? this.settings.loadedAssets.captions
-            : [this.settings.captionLanguage]
-        ).map(lang => CAPTION_LABELS[lang] || lang);
-
-        const sign = this.settings.signLanguage === 'none'
-            ? 'none'
-            : `${SIGN_LABELS[this.settings.signLanguage] || this.settings.signLanguage} available`;
-
-        el.textContent =
-            `Loaded for this flight: ${captions.join(', ')} captions. ` +
-            `Sign assets: ${sign}. Offline-ready.`;
-    },
-
 
     toggleSetting(settingName, value) {
         this.settings[settingName] = value;
@@ -824,12 +817,15 @@ const app = {
     },
 
     confirmReceipt() {
+        if (!this.requiresAcknowledgment(this.currentEvent || {})) return;
+
         const btn = document.getElementById('confirm-receipt-btn');
-        if(btn) {
+        if (btn) {
             btn.textContent = '✓ Acknowledged';
             btn.style.background = 'var(--success-color)';
             btn.style.color = 'white';
         }
+
         this.acknowledged = true;
         this.clearSafetyMode();
         this.showToast('Confirmed with crew.');
