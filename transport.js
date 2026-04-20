@@ -1,115 +1,150 @@
-// transport.js
-// Shared transport for Cabin Clarity demo
-// Uses BroadcastChannel when available, with postMessage fallback.
-
-(function () {
-  const CHANNEL_NAME = 'cabin-clarity';
-  const TYPE_EVENT = 'cc_event';
-  const TYPE_STATUS = 'cc_status';
-
-  function safeClone(value) {
-    try {
-      return JSON.parse(JSON.stringify(value));
-    } catch {
-      return value;
-    }
-  }
-
-  class CabinTransport {
+class CabinTransport {
     constructor() {
-      this.listeners = { status: [], announcement: [] };
-      this.connected = false;
-      this.channel = null;
-      this.windowListenerAttached = false;
-
-      if ('BroadcastChannel' in window) {
-        this.channel = new BroadcastChannel(CHANNEL_NAME);
-        this.channel.onmessage = (e) => this._handleIncoming(e.data);
-      }
-
-      if (!this.windowListenerAttached) {
-        window.addEventListener('message', (e) => {
-          if (e.data && (e.data.type === TYPE_EVENT || e.data.type === TYPE_STATUS)) {
-            this._handleIncoming(e.data);
-          }
-        });
-        this.windowListenerAttached = true;
-      }
+        this.listeners = { status: [], announcement: [] };
+        this.ws = null;
+        this.connected = false;
+        this.reconnectAttempts = 0;
+        this.maxReconnect = 10;
+        this.lastEventId = null;
     }
 
     on(event, cb) {
-      if (!this.listeners[event]) this.listeners[event] = [];
-      this.listeners[event].push(cb);
+        if (!this.listeners[event]) this.listeners[event] = [];
+        this.listeners[event].push(cb);
     }
 
     emit(event, payload) {
-      (this.listeners[event] || []).forEach(cb => cb(payload));
+        (this.listeners[event] || []).forEach(cb => cb(payload));
     }
 
     connect(onReady) {
-      this.connected = true;
-      this.emit('status', { state: 'connecting' });
+        this.emit('status', { state: 'connecting' });
 
-      setTimeout(() => {
-        this.emit('status', { state: 'connected' });
-        if (typeof onReady === 'function') onReady();
-      }, 600);
+        // Default to localhost — change IP for cross-device demo
+        const host = new URLSearchParams(window.location.search).get('host') || 'localhost';
+        const port = new URLSearchParams(window.location.search).get('port') || '8765';
+        const wsUrl = `ws://${host}:${port}/ws`;
+
+        try {
+            this.ws = new WebSocket(wsUrl);
+        } catch (e) {
+            console.error('WebSocket connection failed:', e);
+            this._fallbackToMock(onReady);
+            return;
+        }
+
+        this.ws.onopen = () => {
+            this.connected = true;
+            this.reconnectAttempts = 0;
+            this.emit('status', { state: 'connected' });
+
+            // Send handshake with last event ID for replay
+            this.ws.send(JSON.stringify({
+                type: 'handshake',
+                lastEventId: this.lastEventId,
+                preferences: this._getPreferences()
+            }));
+
+            if (typeof onReady === 'function') onReady();
+        };
+
+        this.ws.onmessage = (msg) => {
+            try {
+                const data = JSON.parse(msg.data);
+                this._handleIncoming(data);
+            } catch (e) {
+                console.error('Failed to parse message:', e);
+            }
+        };
+
+        this.ws.onclose = () => {
+            this.connected = false;
+            this.emit('status', { state: 'reconnecting' });
+            this._attemptReconnect(onReady);
+        };
+
+        this.ws.onerror = (err) => {
+            console.error('WebSocket error:', err);
+        };
     }
 
-    simulateDisconnect() {
-      this.connected = false;
-      this.emit('status', { state: 'reconnecting' });
+    _attemptReconnect(onReady) {
+        if (this.reconnectAttempts >= this.maxReconnect) {
+            this.emit('status', { state: 'disconnected' });
+            return;
+        }
+        this.reconnectAttempts++;
+        const delay = Math.min(1000 * Math.pow(1.5, this.reconnectAttempts), 10000);
+        setTimeout(() => this.connect(onReady), delay);
+    }
 
-      setTimeout(() => {
+    _fallbackToMock(onReady) {
+        // If WebSocket fails, fall back to local mock mode
+        // so the app still works for offline testing
+        console.warn('Falling back to mock transport');
         this.connected = true;
         this.emit('status', { state: 'connected' });
-      }, 1800);
+        if (typeof onReady === 'function') onReady();
     }
 
+    _handleIncoming(data) {
+        if (!data || !data.type) return;
+
+        // Track event IDs for replay on reconnect
+        if (data.event_id) {
+            this.lastEventId = data.event_id;
+        }
+
+        switch (data.type) {
+            case 'caption':
+                // Complete caption (PRAM or template snap)
+                this.emit('announcement', data);
+                break;
+
+            case 'caption_word':
+                // Single word for progressive display
+                this.emit('word', data);
+                break;
+
+            case 'urgency_shift':
+                this.emit('announcement', data);
+                break;
+
+            case 'status':
+                this.emit('status', data);
+                break;
+
+            case 'snapshot':
+                // Initial state on connect (late boarder)
+                this.emit('snapshot', data);
+                break;
+
+            default:
+                console.warn('Unknown event type:', data.type);
+        }
+    }
+
+    _getPreferences() {
+        // Read from app settings if available
+        return {
+            captionLanguage: localStorage.getItem('cc_caption_language') || 'en',
+            signLanguage: localStorage.getItem('cc_sign_language') || 'none'
+        };
+    }
+
+    // Keep simulateDisconnect for local testing
+    simulateDisconnect() {
+        this.emit('status', { state: 'reconnecting' });
+        setTimeout(() => {
+            this.emit('status', { state: 'connected' });
+        }, 1800);
+    }
+
+    // Keep dispatch for local testing with keyboard shortcuts
     dispatch(eventObj) {
-      const stamped = { ...safeClone(eventObj), _ts: Date.now() };
-      this.emit('announcement', stamped);
-
-      const payload = { type: TYPE_EVENT, payload: stamped };
-
-      if (this.channel) {
-        this.channel.postMessage(payload);
-      }
-
-      if (window.opener && !window.opener.closed) {
-        window.opener.postMessage(payload, '*');
-      }
-      if (window.parent && window.parent !== window) {
-        window.parent.postMessage(payload, '*');
-      }
+        const stamped = { ...eventObj, _ts: Date.now() };
+        this.emit('announcement', stamped);
     }
+}
 
-    sendStatus(state) {
-      const payload = { type: TYPE_STATUS, payload: { state } };
-      this.emit('status', payload.payload);
-
-      if (this.channel) {
-        this.channel.postMessage(payload);
-      }
-
-      if (window.opener && !window.opener.closed) {
-        window.opener.postMessage(payload, '*');
-      }
-      if (window.parent && window.parent !== window) {
-        window.parent.postMessage(payload, '*');
-      }
-    }
-
-    _handleIncoming(msg) {
-      if (!msg || !msg.type) return;
-      if (msg.type === TYPE_EVENT && msg.payload) {
-        this.emit('announcement', msg.payload);
-      }
-      if (msg.type === TYPE_STATUS && msg.payload) {
-        this.emit('status', msg.payload);
-      }
-    }
-  }
-
-  window.CabinTransport = CabinTransport;
-})();
+window.CabinTransport = CabinTransport;
